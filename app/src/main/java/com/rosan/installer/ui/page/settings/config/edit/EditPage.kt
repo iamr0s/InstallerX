@@ -1,0 +1,411 @@
+package com.rosan.installer.ui.page.settings.config.edit
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.twotone.Add
+import androidx.compose.material.icons.twotone.AltRoute
+import androidx.compose.material.icons.twotone.ArrowBack
+import androidx.compose.material.icons.twotone.BugReport
+import androidx.compose.material.icons.twotone.BuildCircle
+import androidx.compose.material.icons.twotone.Delete
+import androidx.compose.material.icons.twotone.Downloading
+import androidx.compose.material.icons.twotone.Edit
+import androidx.compose.material.icons.twotone.Face
+import androidx.compose.material.icons.twotone.Memory
+import androidx.compose.material.icons.twotone.More
+import androidx.compose.material.icons.twotone.People
+import androidx.compose.material.icons.twotone.PsychologyAlt
+import androidx.compose.material.icons.twotone.Terminal
+import androidx.compose.material.icons.twotone.TrendingDown
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.rosan.installer.R
+import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
+import com.rosan.installer.ui.widget.setting.DropDownMenuWidget
+import com.rosan.installer.ui.widget.setting.LabelWidget
+import com.rosan.installer.ui.widget.setting.SwitchWidget
+import kotlinx.coroutines.flow.collectLatest
+import org.koin.androidx.compose.getViewModel
+import org.koin.core.parameter.parametersOf
+import kotlin.math.absoluteValue
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
+@Composable
+fun EditPage(
+    navController: NavController,
+    id: Long? = null,
+    viewModel: EditViewModel = getViewModel(parameters = { parametersOf(id) })
+) {
+    LaunchedEffect(true) {
+        viewModel.dispatch(EditViewAction.Init)
+    }
+
+    val showFloatingState = remember {
+        mutableStateOf(true)
+    }
+    val showFloating by showFloatingState
+
+    val snackBarHostState = remember {
+        SnackbarHostState()
+    }
+    LaunchedEffect(true) {
+        viewModel.eventFlow.collectLatest { event ->
+            when (event) {
+                is EditViewEvent.SnackBar -> {
+                    snackBarHostState.showSnackbar(
+                        message = event.message,
+                        withDismissAction = true,
+                    )
+                }
+                is EditViewEvent.Saved -> {
+                    navController.navigateUp()
+                }
+            }
+        }
+    }
+
+    Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(ShowFloatingActionButtonNestedScrollConnection(showFloatingState)),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(text = stringResource(id = if (id == null) R.string.add else R.string.update))
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(
+                            imageVector = Icons.TwoTone.ArrowBack,
+                            contentDescription = stringResource(
+                                id = R.string.back
+                            )
+                        )
+                    }
+                }
+            )
+        },
+        floatingActionButton = {
+            AnimatedVisibility(
+                visible = showFloating,
+                enter = scaleIn(),
+                exit = scaleOut()
+            ) {
+                val text = stringResource(id = R.string.save)
+                ExtendedFloatingActionButton(
+                    icon = {
+                        Icon(
+                            imageVector = Icons.TwoTone.Add,
+                            contentDescription = text
+                        )
+                    },
+                    text = {
+                        Text(text = text)
+                    },
+                    onClick = {
+                        viewModel.dispatch(EditViewAction.SaveData)
+                    }
+                )
+            }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(it),
+        ) {
+            item { DataNameWidget(viewModel = viewModel) }
+            item { DataDescriptionWidget(viewModel = viewModel) }
+            item { LabelWidget(label = stringResource(id = R.string.more)) }
+            item { DataAuthorizerWidget(viewModel = viewModel) }
+            item { DataCustomizeAuthorizerWidget(viewModel = viewModel) }
+            item { DataInstallModeWidget(viewModel = viewModel) }
+//            item { DataAnalyserWidget(viewModel = viewModel) }
+            item { DataCompatModeWidget(viewModel = viewModel) }
+            item { DataDeclareInstallerWidget(viewModel = viewModel) }
+            item { DataInstallerWidget(viewModel = viewModel) }
+            item { DataForAllUserWidget(viewModel = viewModel) }
+            item { DataAllowTestOnlyWidget(viewModel = viewModel) }
+            item { DataAllowDowngradeWidget(viewModel = viewModel) }
+            item { DataAutoDeleteWidget(viewModel = viewModel) }
+        }
+    }
+}
+
+class ShowFloatingActionButtonNestedScrollConnection(
+    private val showFloatingState: MutableState<Boolean>
+) : NestedScrollConnection {
+    override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+        if (available.y.absoluteValue > 1) showFloatingState.value = available.y >= 0
+        return super.onPreScroll(available, source)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DataNameWidget(viewModel: EditViewModel) {
+    OutlinedTextField(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp, horizontal = 16.dp)
+            .focusable(),
+        leadingIcon = {
+            Icon(imageVector = Icons.TwoTone.Edit, contentDescription = null)
+        },
+        label = {
+            Text(text = stringResource(id = R.string.config_name))
+        },
+        value = viewModel.state.data.name,
+        onValueChange = {
+            viewModel.dispatch(EditViewAction.ChangeDataName(it))
+        },
+        singleLine = true,
+        isError = viewModel.state.data.errorName
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DataDescriptionWidget(viewModel: EditViewModel) {
+    TextField(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp, horizontal = 16.dp)
+            .focusable(),
+        leadingIcon = {
+            Icon(imageVector = Icons.TwoTone.More, contentDescription = null)
+        },
+        label = {
+            Text(text = stringResource(id = R.string.config_description))
+        },
+        value = viewModel.state.data.description,
+        onValueChange = { viewModel.dispatch(EditViewAction.ChangeDataDescription(it)) },
+        maxLines = 8,
+    )
+}
+
+@Composable
+fun DataAuthorizerWidget(viewModel: EditViewModel) {
+    val authorizer = viewModel.state.data.authorizer
+    val data = mapOf(
+        ConfigEntity.Authorizer.None to stringResource(id = R.string.config_authorizer_none),
+        ConfigEntity.Authorizer.Root to stringResource(id = R.string.config_authorizer_root),
+        ConfigEntity.Authorizer.Shizuku to stringResource(id = R.string.config_authorizer_shizuku),
+        ConfigEntity.Authorizer.Customize to stringResource(id = R.string.config_authorizer_customize),
+    )
+    DropDownMenuWidget(
+        icon = Icons.TwoTone.Memory,
+        title = stringResource(id = R.string.config_authorizer),
+        description = if (data.containsKey(authorizer)) data[authorizer] else null,
+        choice = data.keys.toList().indexOf(authorizer),
+        data = data.values.toList(),
+    ) {
+        data.keys.toList().getOrNull(it)?.let {
+            viewModel.dispatch(EditViewAction.ChangeDataAuthorizer(it))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DataCustomizeAuthorizerWidget(viewModel: EditViewModel) {
+    if (!viewModel.state.data.authorizerCustomize) return
+    val customizeAuthorizer = viewModel.state.data.customizeAuthorizer
+    TextField(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp, horizontal = 16.dp)
+            .focusable(),
+        leadingIcon = {
+            Icon(imageVector = Icons.TwoTone.Terminal, contentDescription = null)
+        },
+        label = {
+            Text(text = stringResource(id = R.string.config_customize_authorizer))
+        },
+        value = customizeAuthorizer,
+        onValueChange = { viewModel.dispatch(EditViewAction.ChangeDataCustomizeAuthorizer(it)) },
+        maxLines = 8,
+        isError = viewModel.state.data.errorCustomizeAuthorizer
+    )
+}
+
+@Composable
+fun DataInstallModeWidget(viewModel: EditViewModel) {
+    val installMode = viewModel.state.data.installMode
+    val data = mapOf(
+        ConfigEntity.InstallMode.Dialog to stringResource(id = R.string.config_install_mode_dialog),
+        ConfigEntity.InstallMode.AutoDialog to stringResource(id = R.string.config_install_mode_auto_dialog),
+        ConfigEntity.InstallMode.Notification to stringResource(id = R.string.config_install_mode_notification),
+        ConfigEntity.InstallMode.AutoNotification to stringResource(id = R.string.config_install_mode_auto_notification),
+        ConfigEntity.InstallMode.Ignore to stringResource(id = R.string.config_install_mode_ignore),
+    )
+    DropDownMenuWidget(
+        icon = Icons.TwoTone.Downloading,
+        title = stringResource(id = R.string.config_install_mode),
+        description = if (data.containsKey(installMode)) data[installMode] else null,
+        choice = data.keys.toList().indexOf(installMode),
+        data = data.values.toList(),
+    ) {
+        data.keys.toList().getOrNull(it)?.let {
+            viewModel.dispatch(EditViewAction.ChangeDataInstallMode(it))
+        }
+    }
+}
+
+@Composable
+fun DataAnalyserWidget(viewModel: EditViewModel) {
+    val analyser = viewModel.state.data.analyser
+    val data = mapOf(
+        ConfigEntity.Analyser.R0s to stringResource(id = R.string.config_analyser_r0s),
+        ConfigEntity.Analyser.System to stringResource(id = R.string.config_analyser_system),
+    )
+    DropDownMenuWidget(
+        icon = Icons.TwoTone.AltRoute,
+        title = stringResource(id = R.string.config_analyser),
+        description = if (data.containsKey(analyser)) data[analyser] else null,
+        choice = data.keys.toList().indexOf(analyser),
+        data = data.values.toList(),
+    ) {
+        data.keys.toList().getOrNull(it)?.let {
+            viewModel.dispatch(EditViewAction.ChangeDataAnalyser(it))
+        }
+    }
+}
+
+@Composable
+fun DataCompatModeWidget(viewModel: EditViewModel) {
+    SwitchWidget(
+        icon = Icons.TwoTone.BuildCircle,
+        title = stringResource(id = R.string.config_compat_mode),
+        description = stringResource(id = R.string.config_compat_mode_dsp),
+        checked = viewModel.state.data.compatMode
+    ) {
+        viewModel.dispatch(EditViewAction.ChangeDataCompatMode(it))
+    }
+}
+
+@Composable
+fun DataDeclareInstallerWidget(viewModel: EditViewModel) {
+    val declareInstaller = viewModel.state.data.declareInstaller
+    SwitchWidget(
+        icon = Icons.TwoTone.Face,
+        title = stringResource(id = R.string.config_declare_installer),
+        checked = declareInstaller
+    ) {
+        viewModel.dispatch(EditViewAction.ChangeDataDeclareInstaller(it))
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DataInstallerWidget(viewModel: EditViewModel) {
+    val declareInstaller = viewModel.state.data.declareInstaller
+    val installer = viewModel.state.data.installer
+    if (!declareInstaller) return
+    OutlinedTextField(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp, horizontal = 16.dp)
+            .focusable(),
+        leadingIcon = {
+            Icon(imageVector = Icons.TwoTone.PsychologyAlt, contentDescription = null)
+        },
+        label = {
+            Text(text = stringResource(id = R.string.config_installer))
+        },
+        value = installer,
+        onValueChange = {
+            viewModel.dispatch(EditViewAction.ChangeDataInstaller(it))
+        },
+        singleLine = true,
+        isError = viewModel.state.data.errorInstaller
+    )
+}
+
+@Composable
+fun DataForAllUserWidget(viewModel: EditViewModel) {
+    SwitchWidget(
+        icon = Icons.TwoTone.People,
+        title = stringResource(id = R.string.config_for_all_user),
+        checked = viewModel.state.data.forAllUser
+    ) {
+        viewModel.dispatch(EditViewAction.ChangeDataForAllUser(it))
+    }
+}
+
+@Composable
+fun DataAllowTestOnlyWidget(viewModel: EditViewModel) {
+    SwitchWidget(
+        icon = Icons.TwoTone.BugReport,
+        title = stringResource(id = R.string.config_allow_test_only),
+        description = stringResource(id = R.string.config_allow_test_only_dsp),
+        checked = viewModel.state.data.allowTestOnly,
+        onCheckedChange = {
+            viewModel.dispatch(EditViewAction.ChangeDataAllowTestOnly(it))
+        }
+    )
+}
+
+@Composable
+fun DataAllowDowngradeWidget(viewModel: EditViewModel) {
+    SwitchWidget(
+        icon = Icons.TwoTone.TrendingDown,
+        title = stringResource(id = R.string.config_allow_downgrade),
+        description = stringResource(id = R.string.config_allow_downgrade_dsp),
+        checked = viewModel.state.data.allowDowngrade,
+        onCheckedChange = {
+            viewModel.dispatch(EditViewAction.ChangeDataAllowDowngrade(it))
+        }
+    )
+}
+
+@Composable
+fun DataAutoDeleteWidget(viewModel: EditViewModel) {
+    SwitchWidget(
+        icon = Icons.TwoTone.Delete,
+        title = stringResource(id = R.string.config_auto_delete),
+        description = stringResource(id = R.string.config_auto_delete_dsp),
+        checked = viewModel.state.data.autoDelete,
+        onCheckedChange = {
+            viewModel.dispatch(EditViewAction.ChangeDataAutoDelete(it))
+        }
+    )
+}
+
+
+
+
+
+
