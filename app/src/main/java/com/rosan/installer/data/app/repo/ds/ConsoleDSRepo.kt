@@ -1,6 +1,5 @@
 package com.rosan.installer.data.app.repo.ds
 
-import android.util.Log
 import com.rosan.installer.data.app.model.entity.error.ConsoleError
 import com.rosan.installer.data.app.repo.DSRepo
 import com.rosan.installer.data.app.repo.util.ConsoleUtil
@@ -58,11 +57,8 @@ interface ConsoleDSRepo : DSRepo, KoinComponent {
         val inputBytes = inputJob.await()
         val errorBytes = errorJob.await()
         val code = it.exitValue()
-        Log.e("r0s", "${code}")
-        Log.e("r0s", "${inputBytes.decodeToString()}")
-        Log.e("r0s", "${errorBytes.decodeToString()}")
+        if (code == 0) return@use
         throw runCatching {
-            if (code == 0) return@use
             serializer.decodeFromByteArray<ErrorEntity>(inputBytes)
         }.getOrNull()
             ?: ConsoleError(

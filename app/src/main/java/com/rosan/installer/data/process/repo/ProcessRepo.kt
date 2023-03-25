@@ -12,11 +12,7 @@ import kotlinx.serialization.protobuf.ProtoBuf
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.core.context.startKoin
-import java.io.FileDescriptor
-import java.io.FileInputStream
-import java.io.InputStream
-import java.io.OutputStream
-import java.io.PrintStream
+import java.io.*
 import kotlin.reflect.KClass
 import kotlin.system.exitProcess
 

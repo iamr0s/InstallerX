@@ -40,7 +40,7 @@ class ForegroundInfoHandler(
 
     @RequiresApi(Build.VERSION_CODES.O)
     private val notificationChannel: NotificationChannelCompat = NotificationChannelCompat
-        .Builder(InstallerChannel, NotificationManagerCompat.IMPORTANCE_HIGH)
+        .Builder(InstallerChannel, NotificationManagerCompat.IMPORTANCE_MAX)
         .setName(context.getString(R.string.installer_channel_name))
         .build()
 

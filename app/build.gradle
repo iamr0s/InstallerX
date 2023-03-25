@@ -26,8 +26,8 @@ android {
         applicationId "com.rosan.installer.x"
         minSdk 21
         targetSdk 33
-        versionCode 1
-        versionName "1.0" + "_" + formatTime
+        versionCode 2
+        versionName "1.1" + "_" + formatTime
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -116,7 +116,6 @@ dependencies {
     implementation "androidx.compose.ui:ui-tooling-preview:1.3.3"
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
     implementation 'androidx.activity:activity-compose:1.6.1'
-    implementation 'androidx.core:core-ktx:+'
 
     compileOnly project(':hidden-api')
 
@@ -184,6 +183,13 @@ dependencies {
      * @url https://google.github.io/accompanist/systemuicontroller/
      * */
     implementation "com.google.accompanist:accompanist-systemuicontroller:$accompanist_version"
+
+    /**
+     * @name Google Jetpack DataStore
+     * @url https://developer.android.google.cn/topic/libraries/architecture/datastore?hl=zh-cn
+     * */
+//    def datastore_version = '1.0.0'
+//    implementation "androidx.datastore:datastore-preferences:$datastore_version"
 
     /**
      * @name Google Jetpack Room

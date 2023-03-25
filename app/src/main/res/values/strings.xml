@@ -1,6 +1,11 @@
 <resources>
     <string name="app_name">InstallerX</string>
 
+    <string name="agreement_title">温馨提示</string>
+    <string name="agreement_text">根据相关政策规定，您需要先阅读并同意&lt;a href=&quot;https://iamr0s.github.io/InstallerXPrivacyPolicy/terms&quot;&gt;《用户条款》&lt;/a&gt;与&lt;a href=&quot;https://iamr0s.github.io/InstallerXPrivacyPolicy/privacy&quot;&gt;《隐私政策》&lt;/a&gt;后才能开始使用本软件。</string>
+
+    <string name="agree">同意</string>
+
     <string name="back">返回</string>
     <string name="home">主页</string>
     <string name="config">配置</string>

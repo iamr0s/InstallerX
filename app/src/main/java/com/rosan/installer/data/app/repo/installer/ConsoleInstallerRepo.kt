@@ -59,8 +59,8 @@ interface ConsoleInstallerRepo : InstallerRepo, KoinComponent {
         val inputBytes = inputJob.await()
         val errorBytes = errorJob.await()
         val code = it.exitValue()
+        if (code == 0) return@use
         throw runCatching {
-            if (code == 0) return@use
             serializer.decodeFromByteArray<ErrorEntity>(inputBytes)
         }.getOrNull()
             ?: ConsoleError(

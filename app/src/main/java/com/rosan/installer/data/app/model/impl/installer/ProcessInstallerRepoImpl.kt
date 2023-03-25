@@ -1,13 +1,11 @@
 package com.rosan.installer.data.app.model.impl.installer
 
-import android.content.Context
-import android.content.IIntentReceiver
-import android.content.IIntentSender
-import android.content.Intent
-import android.content.IntentSender
+import android.content.*
 import android.content.pm.PackageInstaller
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.os.Parcel
 import com.rosan.installer.data.app.model.entity.AppEntity
 import com.rosan.installer.data.app.model.entity.DataEntity
 import com.rosan.installer.data.app.model.entity.InstallExtraEntity
@@ -28,46 +26,6 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 
 class ProcessInstallerRepoImpl : InstallerRepo, KoinComponent {
-    //    private fun getPackageManager(
-//        config: ConfigEntity,
-//        entities: List<AppEntity>,
-//        extra: InstallExtraEntity
-//    ): PackageInstaller {
-//        val iPackageManager = IPackageManager.Stub.asInterface(ServiceManager.getService("package"))
-//        val iPackageInstaller = iPackageManager.packageInstaller
-//        val repo = get<ReflectRepo>()
-//        return (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-//            repo.getDeclaredConstructor(
-//                PackageInstaller::class.java,
-//                IPackageInstaller::class.java,
-//                String::class.java,
-//                String::class.java,
-//                Int::class.java,
-//            )!!.also {
-//                it.isAccessible = true
-//            }.newInstance(iPackageInstaller, config.installer, null, extra.userId)
-//        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            repo.getDeclaredConstructor(
-//                PackageInstaller::class.java,
-//                IPackageInstaller::class.java,
-//                String::class.java,
-//                Int::class.java,
-//            )!!.also {
-//                it.isAccessible = true
-//            }.newInstance(iPackageInstaller, config.installer, extra.userId)
-//        } else {
-//            repo.getDeclaredConstructor(
-//                PackageInstaller::class.java,
-//                Context::class.java,
-//                PackageManager::class.java,
-//                IPackageInstaller::class.java,
-//                String::class.java,
-//                Int::class.java
-//            )!!.also {
-//                it.isAccessible = true
-//            }.newInstance(null, null, iPackageInstaller, config.installer, extra.userId)
-//        }) as PackageInstaller
-//    }
     private val context by inject<Context>()
 
     private val packageManager = context.packageManager
@@ -126,7 +84,7 @@ class ProcessInstallerRepoImpl : InstallerRepo, KoinComponent {
         entities: List<AppEntity>,
         extra: InstallExtraEntity,
         packageInstaller: PackageInstaller
-    ): PackageInstaller.Session = withContext(Dispatchers.IO) {
+    ): Session = withContext(Dispatchers.IO) {
         // MODE_FULL_INSTALL: 覆盖安装
         // MODE_INHERIT_EXISTING: 补充安装
         // see https://android.googlesource.com/platform/frameworks/base/+/refs/heads/master/core/java/android/content/pm/PackageInstaller.java#1670
@@ -156,14 +114,14 @@ class ProcessInstallerRepoImpl : InstallerRepo, KoinComponent {
         if (config.forAllUser) params.installFlags =
             params.installFlags or InstallFlag.INSTALL_ALL_USERS.value
         val sessionId = packageInstaller.createSession(params)
-        return@withContext packageInstaller.openSession(sessionId)
+        return@withContext Session(sessionId, packageInstaller.openSession(sessionId))
     }
 
     private suspend fun installIts(
         config: ConfigEntity,
         entities: List<AppEntity>,
         extra: InstallExtraEntity,
-        session: PackageInstaller.Session
+        session: Session
     ) {
         for (entity in entities) {
             installIt(config, entity, extra, session)
@@ -174,7 +132,7 @@ class ProcessInstallerRepoImpl : InstallerRepo, KoinComponent {
         config: ConfigEntity,
         entity: AppEntity,
         extra: InstallExtraEntity,
-        session: PackageInstaller.Session
+        session: Session
     ) {
         when (entity) {
             is AppEntity.MainEntity -> {
@@ -193,13 +151,13 @@ class ProcessInstallerRepoImpl : InstallerRepo, KoinComponent {
     }
 
     private suspend fun writeEntity(
-        session: PackageInstaller.Session,
+        session: Session,
         name: String,
         inputStream: InputStream
     ) = withContext(Dispatchers.IO) {
-        session.openWrite(name, 0, inputStream.available().toUInt().toLong()).use { out ->
+        session.impl.openWrite(name, 0, inputStream.available().toUInt().toLong()).use { out ->
             inputStream.copyTo(out)
-            session.fsync(out)
+            session.impl.fsync(out)
         }
     }
 
@@ -207,10 +165,10 @@ class ProcessInstallerRepoImpl : InstallerRepo, KoinComponent {
         config: ConfigEntity,
         entities: List<AppEntity>,
         extra: InstallExtraEntity,
-        session: PackageInstaller.Session,
-    ) = withContext(Dispatchers.IO) {
+        session: Session,
+    ) {
         val receiver = LocalIntentReceiver()
-        session.commit(receiver.getIntentSender())
+        session.impl.commit(receiver.getIntentSender())
         val result = receiver.getResult()
         val status =
             result.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
@@ -245,6 +203,10 @@ class ProcessInstallerRepoImpl : InstallerRepo, KoinComponent {
         private val result = LinkedBlockingQueue<Intent>()
 
         private val localSender = object : IIntentSender.Stub() {
+            // this api only work for upper Android O (8.0)
+            // see this url:
+            // Android N (7.1): http://aospxref.com/android-7.1.2_r39/xref/frameworks/base/core/java/android/content/IIntentSender.aidl
+            // Android O (8.0): http://aospxref.com/android-8.0.0_r36/xref/frameworks/base/core/java/android/content/IIntentSender.aidl
             override fun send(
                 code: Int,
                 intent: Intent?,
@@ -255,6 +217,54 @@ class ProcessInstallerRepoImpl : InstallerRepo, KoinComponent {
                 options: Bundle?
             ) {
                 result.offer(intent, 5, TimeUnit.SECONDS)
+            }
+
+            fun send(
+                code: Int,
+                intent: Intent?,
+                resolvedType: String?,
+                finishedReceiver: IIntentReceiver?,
+                requiredPermission: String?,
+                options: Bundle?
+            ) {
+                send(
+                    code,
+                    intent,
+                    resolvedType,
+                    null,
+                    finishedReceiver,
+                    requiredPermission,
+                    options
+                )
+            }
+
+            override fun onTransact(code: Int, data: Parcel, reply: Parcel?, flags: Int): Boolean {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) return super.onTransact(
+                    code,
+                    data,
+                    reply,
+                    flags
+                )
+                val descriptor = "android.content.IIntentSender"
+                return when (code) {
+                    1 -> {
+                        data.enforceInterface(descriptor)
+                        send(
+                            data.readInt(),
+                            if (data.readInt() != 0) Intent.CREATOR.createFromParcel(data) else null,
+                            data.readString(),
+                            IIntentReceiver.Stub.asInterface(data.readStrongBinder()),
+                            data.readString(),
+                            if (data.readInt() != 0) Bundle.CREATOR.createFromParcel(data) else null
+                        )
+                        true
+                    }
+                    0x5F4E5446 -> {
+                        reply?.writeString(descriptor)
+                        true
+                    }
+                    else -> return super.onTransact(code, data, reply, flags)
+                }
             }
         }
 
@@ -275,4 +285,6 @@ class ProcessInstallerRepoImpl : InstallerRepo, KoinComponent {
             }
         }
     }
+
+    data class Session(val id: Int, val impl: PackageInstaller.Session)
 }
