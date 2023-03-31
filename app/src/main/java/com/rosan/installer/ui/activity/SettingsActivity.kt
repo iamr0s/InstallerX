@@ -8,12 +8,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
@@ -28,7 +26,6 @@ class SettingsActivity : ComponentActivity(), KoinComponent {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            AgreementDialog()
             // A surface based on material design theme.
             InstallerTheme {
                 Surface(
@@ -36,6 +33,7 @@ class SettingsActivity : ComponentActivity(), KoinComponent {
                         .fillMaxSize()
                         .imePadding()
                 ) {
+                    AgreementDialog()
                     SettingsPage()
                 }
             }
@@ -60,8 +58,10 @@ class SettingsActivity : ComponentActivity(), KoinComponent {
                 Text(text = stringResource(id = R.string.agreement_title))
             },
             text = {
+                val textColor = AlertDialogDefaults.textContentColor.toArgb()
                 AndroidView(factory = {
                     TextView(it).apply {
+                        setTextColor(textColor)
                         movementMethod = LinkMovementMethod.getInstance()
                         text = HtmlCompat.fromHtml(
                             context.getString(R.string.agreement_text),

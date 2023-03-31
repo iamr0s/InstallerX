@@ -20,8 +20,8 @@ import androidx.navigation.NavController
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.rosan.installer.BuildConfig
 import com.rosan.installer.R
+import com.rosan.installer.build.Level
 import com.rosan.installer.build.RsConfig
-import com.rosan.installer.build.Version
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,22 +62,22 @@ fun HomePage(navController: NavController) {
 
 @Composable
 fun StatusWidget() {
-    val containerColor = when (RsConfig.version) {
-        Version.RELEASE -> MaterialTheme.colorScheme.primaryContainer
-        Version.PREVIEW -> MaterialTheme.colorScheme.secondaryContainer
-        Version.ALPHA -> MaterialTheme.colorScheme.tertiaryContainer
+    val containerColor = when (RsConfig.LEVEL) {
+        Level.STABLE -> MaterialTheme.colorScheme.primaryContainer
+        Level.PREVIEW -> MaterialTheme.colorScheme.secondaryContainer
+        Level.UNSTABLE -> MaterialTheme.colorScheme.tertiaryContainer
     }
 
-    val onContainerColor = when (RsConfig.version) {
-        Version.RELEASE -> MaterialTheme.colorScheme.onPrimaryContainer
-        Version.PREVIEW -> MaterialTheme.colorScheme.onSecondaryContainer
-        Version.ALPHA -> MaterialTheme.colorScheme.onTertiaryContainer
+    val onContainerColor = when (RsConfig.LEVEL) {
+        Level.STABLE -> MaterialTheme.colorScheme.onPrimaryContainer
+        Level.PREVIEW -> MaterialTheme.colorScheme.onSecondaryContainer
+        Level.UNSTABLE -> MaterialTheme.colorScheme.onTertiaryContainer
     }
 
-    val version = when (RsConfig.version) {
-        Version.RELEASE -> stringResource(id = R.string.release)
-        Version.PREVIEW -> stringResource(id = R.string.preview)
-        Version.ALPHA -> stringResource(id = R.string.alpha)
+    val level = when (RsConfig.LEVEL) {
+        Level.STABLE -> stringResource(id = R.string.stable)
+        Level.PREVIEW -> stringResource(id = R.string.preview)
+        Level.UNSTABLE -> stringResource(id = R.string.unstable)
     }
 
     CardWidget(
@@ -110,7 +110,7 @@ fun StatusWidget() {
             Box(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     modifier = Modifier.align(Alignment.Center),
-                    text = "$version [${if (BuildConfig.DEBUG) "debug " else ""}${RsConfig.versionName} (${RsConfig.versionCode})]",
+                    text = "$level [${if (BuildConfig.DEBUG) "debug " else ""}${RsConfig.versionName} (${RsConfig.versionCode})]",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }

@@ -2,7 +2,10 @@
     <string name="app_name">InstallerX</string>
 
     <string name="agreement_title">温馨提示</string>
-    <string name="agreement_text">根据相关政策规定，您需要先阅读并同意&lt;a href=&quot;https://iamr0s.github.io/InstallerXPrivacyPolicy/terms&quot;&gt;《用户条款》&lt;/a&gt;与&lt;a href=&quot;https://iamr0s.github.io/InstallerXPrivacyPolicy/privacy&quot;&gt;《隐私政策》&lt;/a&gt;后才能开始使用本软件。</string>
+    <string name="agreement_text">根据相关政策规定，您需要先阅读并同意&lt;a href=&quot;https://iamr0s.github.io/InstallerXDocs/terms&quot;&gt;《用户条款》&lt;/a&gt;与&lt;a href=&quot;https://iamr0s.github.io/InstallerXDocs/privacy&quot;&gt;《隐私政策》&lt;/a&gt;后才能开始使用本软件。\n同意后不再弹出此提示，可通过设置页点击链接可再次查看相关文件内容。</string>
+
+    <string name="user_terms">用户条款</string>
+    <string name="privacy_policy">隐私政策</string>
 
     <string name="agree">同意</string>
 
@@ -12,9 +15,9 @@
     <string name="app">应用</string>
     <string name="preferred">设置</string>
 
-    <string name="release">正式版</string>
+    <string name="stable">正式版</string>
     <string name="preview">预览版</string>
-    <string name="alpha">测试版</string>
+    <string name="unstable">测试版</string>
 
     <string name="version_info">安装器版本</string>
     <string name="system_version">系统版本</string>

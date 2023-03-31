@@ -1,5 +1,6 @@
 package com.rosan.installer.ui.page.settings.preferred
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -7,22 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.twotone.ClearAll
-import androidx.compose.material.icons.twotone.Favorite
-import androidx.compose.material.icons.twotone.FavoriteBorder
-import androidx.compose.material.icons.twotone.Send
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.twotone.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -65,20 +53,21 @@ fun PreferredPage(navController: NavController) {
                 .padding(it)
         ) {
             item { LabelWidget(label = stringResource(id = R.string.basic)) }
-            item {
-                LockDefaultInstaller()
-            }
-            item {
-                UnlockDefaultInstaller()
-            }
-            item {
-                SendLog()
-            }
-            item {
-                ClearCache()
-            }
+            item { LockDefaultInstaller() }
+            item { UnlockDefaultInstaller() }
+            item { SendLog() }
+            item { ClearCache() }
+            item { LabelWidget(label = stringResource(id = R.string.more)) }
+            item { UserTerms() }
+            item { PrivacyPolicy() }
         }
     }
+}
+
+fun openUrl(context: Context, url: String) {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    context.startActivity(intent)
 }
 
 @Composable
@@ -207,6 +196,30 @@ fun ClearCache() {
                 }
                 inProgress = false
             }
+        }
+    ) {}
+}
+
+@Composable
+fun UserTerms() {
+    val context = LocalContext.current
+    BaseWidget(
+        icon = Icons.TwoTone.Gavel,
+        title = stringResource(id = R.string.user_terms),
+        onClick = {
+            openUrl(context, "https://iamr0s.github.io/InstallerXDocs/terms")
+        }
+    ) {}
+}
+
+@Composable
+fun PrivacyPolicy() {
+    val context = LocalContext.current
+    BaseWidget(
+        icon = Icons.TwoTone.PrivacyTip,
+        title = stringResource(id = R.string.privacy_policy),
+        onClick = {
+            openUrl(context, "https://iamr0s.github.io/InstallerXDocs/privacy")
         }
     ) {}
 }

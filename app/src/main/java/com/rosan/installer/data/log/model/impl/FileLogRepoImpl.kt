@@ -31,7 +31,7 @@ class FileLogRepoImpl : LogRepo, KoinComponent {
         file.appendText(
             """
             | ${BuildConfig.APPLICATION_ID}
-            | ${RsConfig.version} [${RsConfig.versionName} (${RsConfig.versionCode})]
+            | ${RsConfig.LEVEL} [${RsConfig.versionName} (${RsConfig.versionCode})]
             | ${RsConfig.deviceName}
             | ${RsConfig.systemVersion}
             | ${RsConfig.systemStruct}

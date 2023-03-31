@@ -6,7 +6,20 @@ import android.text.TextUtils;
 import com.rosan.installer.BuildConfig;
 
 public final class RsConfig {
-    public static final Version version = Version.ALPHA;
+    public static final Level LEVEL = getLevel();
+
+    private static Level getLevel() {
+        Level level = Level.UNSTABLE;
+        switch (BuildConfig.BUILD_LEVEL) {
+            case 1:
+                level = Level.PREVIEW;
+                break;
+            case 2:
+                level = Level.STABLE;
+                break;
+        }
+        return level;
+    }
 
     public static final String versionName = BuildConfig.VERSION_NAME;
 

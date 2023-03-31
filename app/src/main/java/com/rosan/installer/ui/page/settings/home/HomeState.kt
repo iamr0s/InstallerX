@@ -4,13 +4,13 @@ import android.os.Build
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.toUpperCase
 import com.rosan.installer.build.RsConfig
-import com.rosan.installer.build.Version
+import com.rosan.installer.build.Level
 
 /**
  * just constant data, so just use it without ViewModel.
  * */
 data class HomeState(
-    val version: Version = RsConfig.version,
+    val level: Level = RsConfig.LEVEL,
     val versionInfo: String = "${RsConfig.versionName} (${RsConfig.versionCode})",
     val systemVersion: String = if (Build.VERSION.PREVIEW_SDK_INT != 0)
         String.format("%1\$s Preview (API %2\$s)", Build.VERSION.CODENAME, Build.VERSION.SDK_INT)
