@@ -55,6 +55,7 @@ data class ConfigEntity(
         None("none"),
         Root("root"),
         Shizuku("shizuku"),
+        Dhizuku("dhizuku"),
         Customize("customize");
     }
 

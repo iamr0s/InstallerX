@@ -7,9 +7,11 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import androidx.annotation.RequiresApi
+import com.rosan.installer.data.app.util.sortedBest
 import com.rosan.installer.data.installer.model.impl.InstallerRepoImpl
 import com.rosan.installer.ui.activity.InstallerActivity
 import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
 import org.koin.core.component.inject
 
 class BroadcastHandler(worker: InstallerRepoImpl.MyWorker) : Handler(worker), KoinComponent {
@@ -34,6 +36,9 @@ class BroadcastHandler(worker: InstallerRepoImpl.MyWorker) : Handler(worker), Ko
 
         fun finishIntent(worker: InstallerRepoImpl.MyWorker) = workerIntent(worker)
             .putExtra(KEY_NAME, Name.Finish.value)
+
+        fun launchIntent(worker: InstallerRepoImpl.MyWorker) = workerIntent(worker)
+            .putExtra(KEY_NAME, Name.Launch.value)
 
         fun openPendingIntent(
             context: Context,
@@ -86,6 +91,19 @@ class BroadcastHandler(worker: InstallerRepoImpl.MyWorker) : Handler(worker), Ko
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 else PendingIntent.FLAG_UPDATE_CURRENT
             )
+
+        fun launchPendingIntent(
+            context: Context,
+            worker: InstallerRepoImpl.MyWorker
+        ): PendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                worker.impl.id.hashCode() + Name.Launch.ordinal,
+                launchIntent(worker),
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                else PendingIntent.FLAG_UPDATE_CURRENT
+            )
     }
 
     private val context by inject<Context>()
@@ -130,7 +148,7 @@ class BroadcastHandler(worker: InstallerRepoImpl.MyWorker) : Handler(worker), Ko
         private fun doWork(name: Name) {
             when (name) {
                 Name.Open -> {
-                    val context by inject<Context>()
+                    val context = get<Context>()
                     context.startActivity(
                         Intent(context, InstallerActivity::class.java)
                             .putExtra(InstallerActivity.KEY_ID, worker.impl.id)
@@ -140,6 +158,15 @@ class BroadcastHandler(worker: InstallerRepoImpl.MyWorker) : Handler(worker), Ko
                 Name.Analyse -> worker.impl.analyse()
                 Name.Install -> worker.impl.install()
                 Name.Finish -> worker.impl.close()
+                Name.Launch -> {
+                    val context = get<Context>()
+                    val packageName =
+                        worker.impl.entities.filter { it.selected }.map { it.app }.sortedBest()
+                            .first().packageName
+                    val intent = context.packageManager.getLaunchIntentForPackage(packageName)
+                    if (intent != null) context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    worker.impl.close()
+                }
             }
         }
     }
@@ -148,6 +175,7 @@ class BroadcastHandler(worker: InstallerRepoImpl.MyWorker) : Handler(worker), Ko
         Open("open"),
         Analyse("analyse"),
         Install("install"),
-        Finish("finish");
+        Finish("finish"),
+        Launch("launch");
     }
 }

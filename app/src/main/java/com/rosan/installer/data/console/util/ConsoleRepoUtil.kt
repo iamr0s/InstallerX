@@ -1,6 +1,7 @@
 package com.rosan.installer.data.console.util
 
 import com.rosan.installer.data.console.model.impl.DefaultConsoleBuilderRepoImpl
+import com.rosan.installer.data.console.model.impl.DhizukuConsoleBuilderRepoImpl
 import com.rosan.installer.data.console.model.impl.ShizukuConsoleBuilderRepoImpl
 import com.rosan.installer.data.console.repo.ConsoleRepo
 
@@ -41,6 +42,13 @@ class ConsoleRepoUtil {
 
         suspend fun shizuku(action: ShizukuConsoleBuilderRepoImpl.() -> Unit): ConsoleRepo {
             val repo = ShizukuConsoleBuilderRepoImpl()
+            repo.command("sh")
+            repo.action()
+            return repo.open()
+        }
+
+        suspend fun dhizuku(action: DhizukuConsoleBuilderRepoImpl.() -> Unit): ConsoleRepo {
+            val repo = DhizukuConsoleBuilderRepoImpl()
             repo.command("sh")
             repo.action()
             return repo.open()

@@ -10,6 +10,10 @@ android {
         minSdk = 19
         targetSdk = 33
     }
+
+    buildFeatures {
+        buildConfig = false
+    }
 }
 
 dependencies {

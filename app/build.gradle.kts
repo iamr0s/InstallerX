@@ -25,8 +25,8 @@ android {
         applicationId = "com.rosan.installer.x"
         minSdk = 21
         targetSdk = 33
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -121,6 +121,9 @@ android {
 
 dependencies {
     compileOnly(project(":hidden-api"))
+
+    implementation(project(":dhizuku-api"))
+    implementation(project(":dhizuku-aidl"))
 
     implementation(libs.androidx.core)
     implementation(libs.androidx.lifecycle)

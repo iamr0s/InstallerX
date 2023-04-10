@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.Parcel
+import com.rosan.dhizuku.shared.DhizukuVariables
 import com.rosan.installer.data.app.model.entity.AppEntity
 import com.rosan.installer.data.app.model.entity.DataEntity
 import com.rosan.installer.data.app.model.entity.InstallExtraEntity
@@ -42,7 +43,10 @@ class ProcessInstallerRepoImpl : InstallerRepo, KoinComponent {
             "mInstallerPackageName"
         )?.let {
             it.isAccessible = true
-            it.set(packageInstaller, config.installer)
+            var installer = config.installer
+            if (config.authorizer == ConfigEntity.Authorizer.Dhizuku) installer =
+                DhizukuVariables.PACKAGE_NAME
+            it.set(packageInstaller, installer)
         }
         reflect.getDeclaredField(
             packageInstaller::class.java,

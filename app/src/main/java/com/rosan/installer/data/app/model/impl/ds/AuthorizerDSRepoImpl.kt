@@ -15,6 +15,7 @@ class AuthorizerDSRepoImpl : ConsoleDSRepo {
         ConfigEntity.Authorizer.None -> ConsoleRepoUtil.sh { }
         ConfigEntity.Authorizer.Root -> ConsoleRepoUtil.system { }
         ConfigEntity.Authorizer.Shizuku -> ConsoleRepoUtil.shizuku { }
+        ConfigEntity.Authorizer.Dhizuku -> ConsoleRepoUtil.dhizuku { }
         ConfigEntity.Authorizer.Customize -> ConsoleRepoUtil.open {
             this.command(config.customizeAuthorizer)
         }

@@ -10,38 +10,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.twotone.Add
-import androidx.compose.material.icons.twotone.AltRoute
-import androidx.compose.material.icons.twotone.ArrowBack
-import androidx.compose.material.icons.twotone.BugReport
-import androidx.compose.material.icons.twotone.BuildCircle
-import androidx.compose.material.icons.twotone.Delete
-import androidx.compose.material.icons.twotone.Downloading
-import androidx.compose.material.icons.twotone.Edit
-import androidx.compose.material.icons.twotone.Face
-import androidx.compose.material.icons.twotone.Memory
-import androidx.compose.material.icons.twotone.More
-import androidx.compose.material.icons.twotone.People
-import androidx.compose.material.icons.twotone.PsychologyAlt
-import androidx.compose.material.icons.twotone.Terminal
-import androidx.compose.material.icons.twotone.TrendingDown
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.twotone.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -223,6 +194,7 @@ fun DataAuthorizerWidget(viewModel: EditViewModel) {
         ConfigEntity.Authorizer.None to stringResource(id = R.string.config_authorizer_none),
         ConfigEntity.Authorizer.Root to stringResource(id = R.string.config_authorizer_root),
         ConfigEntity.Authorizer.Shizuku to stringResource(id = R.string.config_authorizer_shizuku),
+        ConfigEntity.Authorizer.Dhizuku to stringResource(id = R.string.config_authorizer_dhizuku),
         ConfigEntity.Authorizer.Customize to stringResource(id = R.string.config_authorizer_customize),
     )
     DropDownMenuWidget(
@@ -318,7 +290,12 @@ fun DataCompatModeWidget(viewModel: EditViewModel) {
 
 @Composable
 fun DataDeclareInstallerWidget(viewModel: EditViewModel) {
+    val authorizer = viewModel.state.data.authorizer
     val declareInstaller = viewModel.state.data.declareInstaller
+    if (authorizer == ConfigEntity.Authorizer.Dhizuku) {
+        viewModel.dispatch(EditViewAction.ChangeDataDeclareInstaller(false))
+        return
+    }
     SwitchWidget(
         icon = Icons.TwoTone.Face,
         title = stringResource(id = R.string.config_declare_installer),

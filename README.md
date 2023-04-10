@@ -22,7 +22,7 @@ Android 5.0 ~ 13
 
 - [支付宝](https://qr.alipay.com/fkx18580lfpydiop04dze47)
 - [微信](https://missuo.ru/file/fee5df1381671c996b127.png)
-- [币安](https://missuo.ru/file/fee5df1381671c996b127.png)
+- [币安](https://missuo.ru/file/28368c28d4ff28d59ed4b.jpg)
 
 ## 开源协议
 

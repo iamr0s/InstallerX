@@ -23,5 +23,8 @@ dependencyResolutionManagement {
 rootProject.name = "installer"
 include(
     ":app",
-    ":hidden-api"
+    ":hidden-api",
+    ":dhizuku-aidl",
+    ":dhizuku-shared",
+    ":dhizuku-api"
 )

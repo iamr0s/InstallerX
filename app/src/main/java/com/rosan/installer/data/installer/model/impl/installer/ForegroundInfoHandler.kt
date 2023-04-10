@@ -129,6 +129,9 @@ class ForegroundInfoHandler(
     private val finishIntent =
         BroadcastHandler.finishPendingIntent(context, worker)
 
+    private val launchIntent =
+        BroadcastHandler.launchPendingIntent(context, worker)
+
     private fun onReady(): Notification {
         return NotificationCompat.Builder(context, InstallerChannel)
             .setContentIntent(openIntent)
@@ -242,7 +245,9 @@ class ForegroundInfoHandler(
     }
 
     private fun onInstallSuccess(): Notification {
-        val info = worker.impl.entities.filter { it.selected }.map { it.app }.getInfo(context)
+        val entities = worker.impl.entities.filter { it.selected }.map { it.app }
+        val info = entities.getInfo(context)
+        val intent = context.packageManager.getLaunchIntentForPackage(entities.first().packageName)
         return NotificationCompat.Builder(context, InstallerChannel)
             .setContentIntent(openIntent)
             .setSmallIcon(WorkingIcon)
@@ -250,6 +255,10 @@ class ForegroundInfoHandler(
             .setContentText(getString(R.string.installer_install_success))
             .setLargeIcon(info.icon?.toBitmapOrNull())
             .addAction(0, getString(R.string.finish), finishIntent)
+            .let {
+                if (intent != null) it.addAction(0, getString(R.string.open), launchIntent)
+                else it
+            }
             .setDeleteIntent(finishIntent)
             .build()
     }

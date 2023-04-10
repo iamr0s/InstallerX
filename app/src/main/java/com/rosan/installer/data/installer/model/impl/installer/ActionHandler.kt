@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.system.Os
 import androidx.annotation.RequiresApi
 import com.hjq.permissions.XXPermissions
@@ -39,10 +40,10 @@ class ActionHandler(
 
     private val context by inject<Context>()
 
-    private val cachePath = "${context.externalCacheDir?.absolutePath}/${worker.impl.id}".also {
-        val file = File(it)
-        if (!file.exists()) file.mkdirs()
-    }
+    private val cachePath =
+        (Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path +
+                "/InstallerX/cache" +
+                "/${worker.impl.id}").also { File(it).mkdirs() }
 
     override suspend fun onStart() {
         job = worker.scope.launch {
@@ -209,8 +210,7 @@ class ActionHandler(
                 when (it.scheme) {
                     ContentResolver.SCHEME_CONTENT -> {
                         activity.contentResolver.openInputStream(it)?.use { inputStream ->
-                            val path =
-                                "$cachePath/${System.currentTimeMillis()}-${it.path?.let { File(it).name }}"
+                            val path = cachePath + "/${System.currentTimeMillis()}"
                             File(path).outputStream().use { outputStream ->
                                 inputStream.copyTo(outputStream)
                             }

@@ -3,7 +3,7 @@ package com.rosan.installer.ui.page.settings.preferred
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
+import android.os.Environment
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,12 +14,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import com.rosan.installer.BuildConfig
 import com.rosan.installer.R
 import com.rosan.installer.data.app.model.impl.ds.AuthorizerDSRepoImpl
-import com.rosan.installer.data.log.model.impl.FileLogRepoImpl
 import com.rosan.installer.data.settings.util.ConfigUtil
 import com.rosan.installer.ui.activity.InstallerActivity
 import com.rosan.installer.ui.widget.setting.BaseWidget
@@ -55,7 +53,6 @@ fun PreferredPage(navController: NavController) {
             item { LabelWidget(label = stringResource(id = R.string.basic)) }
             item { LockDefaultInstaller() }
             item { UnlockDefaultInstaller() }
-            item { SendLog() }
             item { ClearCache() }
             item { LabelWidget(label = stringResource(id = R.string.more)) }
             item { UserTerms() }
@@ -129,42 +126,6 @@ fun UnlockDefaultInstaller() {
 }
 
 @Composable
-fun SendLog() {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var inProgress by remember {
-        mutableStateOf(false)
-    }
-    BaseWidget(
-        icon = Icons.TwoTone.Send,
-        title = stringResource(id = R.string.send_log),
-        onClick = {
-            if (inProgress) return@BaseWidget
-            inProgress = true
-            scope.launch(Dispatchers.IO) {
-                val file = File("${FileLogRepoImpl.getWorkPath(context)}/log.zip")
-                FileLogRepoImpl().output(file)
-                val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                    FileProvider.getUriForFile(
-                        context,
-                        "${BuildConfig.APPLICATION_ID}.fileprovider",
-                        file
-                    )
-                else
-                    Uri.fromFile(file)
-                val intent = Intent(Intent.ACTION_SEND)
-                    .setDataAndType(uri, "application/x-zip-compressed")
-                    .putExtra(Intent.EXTRA_STREAM, uri)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(intent)
-                inProgress = false
-            }
-        }
-    ) {}
-}
-
-
-@Composable
 fun ClearCache() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -180,7 +141,10 @@ fun ClearCache() {
             scope.launch(Dispatchers.IO) {
                 val paths = listOfNotNull(
                     context.externalCacheDir?.absolutePath,
-                    context.cacheDir?.absolutePath
+                    context.cacheDir?.absolutePath,
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path?.let {
+                        "$it/InstallerX/cache"
+                    }
                 )
 
                 fun clearFile(file: File) {

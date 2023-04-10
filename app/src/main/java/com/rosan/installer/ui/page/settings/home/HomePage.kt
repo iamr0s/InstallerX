@@ -3,6 +3,7 @@ package com.rosan.installer.ui.page.settings.home
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,10 +19,15 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
+import com.rosan.dhizuku.api.Dhizuku
+import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
 import com.rosan.installer.BuildConfig
 import com.rosan.installer.R
 import com.rosan.installer.build.Level
 import com.rosan.installer.build.RsConfig
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,12 +86,21 @@ fun StatusWidget() {
         Level.UNSTABLE -> stringResource(id = R.string.unstable)
     }
 
+    val context = LocalContext.current
     CardWidget(
         colors = CardDefaults.elevatedCardColors(
             containerColor = containerColor,
             contentColor = onContainerColor
         ),
-        onClick = {},
+        onClick = {
+            GlobalScope.launch(Dispatchers.IO) {
+                Dhizuku.requestPermission(context, object : DhizukuRequestPermissionListener() {
+                    override fun onRequestPermission(grantResult: Int) {
+                        Log.e("r0s", "grant $grantResult")
+                    }
+                })
+            }
+        },
         icon = {
             Image(
                 modifier = Modifier
@@ -136,7 +151,7 @@ fun InfoWidget() {
     )
     ItemsCardWidget(
         title = {
-            Text(text = stringResource(id = R.string.donate))
+            Text(text = stringResource(id = R.string.version_info))
         },
         items = items
     )
@@ -168,7 +183,7 @@ fun DonateWidget() {
         HomeCardItem(
             label = stringResource(id = R.string.binance),
             onClick = {
-                openUrl(context, "https://missuo.ru/file/fee5df1381671c996b127.png")
+                openUrl(context, "https://missuo.ru/file/28368c28d4ff28d59ed4b.jpg")
             }
         ),
     )
