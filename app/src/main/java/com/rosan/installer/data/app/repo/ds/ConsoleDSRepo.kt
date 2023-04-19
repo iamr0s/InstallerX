@@ -4,6 +4,7 @@ import com.rosan.installer.data.app.model.entity.error.ConsoleError
 import com.rosan.installer.data.app.repo.DSRepo
 import com.rosan.installer.data.app.repo.util.ConsoleUtil
 import com.rosan.installer.data.common.model.entity.ErrorEntity
+import com.rosan.installer.data.common.model.entity.serializer.ThrowableSerializer
 import com.rosan.installer.data.console.repo.ConsoleRepo
 import com.rosan.installer.data.process.model.impl.DSProcessRepoImpl
 import com.rosan.installer.data.process.repo.ProcessRepo
@@ -59,12 +60,12 @@ interface ConsoleDSRepo : DSRepo, KoinComponent {
         val code = it.exitValue()
         if (code == 0) return@use
         throw runCatching {
-            serializer.decodeFromByteArray<ErrorEntity>(inputBytes)
+            serializer.decodeFromByteArray(ThrowableSerializer(), inputBytes)
         }.getOrNull()
             ?: ConsoleError(
                 code = code,
-                read = inputBytes.decodeToString(),
-                error = errorBytes.decodeToString()
+                read = inputBytes.decodeToString().trim(),
+                error = errorBytes.decodeToString().trim()
             )
     }
 }

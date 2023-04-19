@@ -8,18 +8,14 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.ParcelFileDescriptor
 import android.system.Os
 import androidx.annotation.RequiresApi
 import com.hjq.permissions.XXPermissions
-import com.rosan.installer.data.app.model.entity.AnalyseEntity
-import com.rosan.installer.data.app.model.entity.AppEntity
-import com.rosan.installer.data.app.model.entity.DataEntity
-import com.rosan.installer.data.app.model.entity.InstallExtraEntity
+import com.rosan.installer.data.app.model.entity.*
 import com.rosan.installer.data.app.model.impl.AnalyserRepoImpl
-import com.rosan.installer.data.app.model.impl.installer.AuthorizerInstallerRepoImpl
-import com.rosan.installer.data.app.util.DataType
-import com.rosan.installer.data.installer.model.entity.InstallEntity
 import com.rosan.installer.data.installer.model.entity.ProgressEntity
+import com.rosan.installer.data.installer.model.entity.SelectInstallEntity
 import com.rosan.installer.data.installer.model.entity.error.ResolveError
 import com.rosan.installer.data.installer.model.impl.InstallerRepoImpl
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
@@ -29,6 +25,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import okhttp3.internal.closeQuietly
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File
@@ -40,10 +37,12 @@ class ActionHandler(
 
     private val context by inject<Context>()
 
+    private val pfds = mutableListOf<ParcelFileDescriptor>()
+
     private val cachePath =
-        (Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path +
-                "/InstallerX/cache" +
-                "/${worker.impl.id}").also { File(it).mkdirs() }
+        (Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path + "/InstallerX/cache" + "/${worker.impl.id}").also {
+            File(it).mkdirs()
+        }
 
     override suspend fun onStart() {
         job = worker.scope.launch {
@@ -62,6 +61,10 @@ class ActionHandler(
     }
 
     private fun deleteFile(file: File) {
+        pfds.forEach {
+            it.closeQuietly()
+        }
+        pfds.clear()
         if (!file.exists()) return
         if (file.isDirectory) file.listFiles()?.forEach {
             deleteFile(it)
@@ -107,30 +110,33 @@ class ActionHandler(
             if (XXPermissions.isGranted(activity, permissions)) {
                 send(null)
             } else {
-                XXPermissions.with(activity)
-                    .permission(permissions)
-                    .request { _, all ->
-                        if (all) trySend(null)
-                        else close()
-                    }
+                XXPermissions.with(activity).permission(permissions).request { _, all ->
+                    if (all) trySend(null)
+                    else close()
+                }
             }
             awaitClose { }
         }.first()
     }
 
     private suspend fun resolveConfig(activity: Activity): ConfigEntity {
-        val packageName =
-            activity.callingPackage
-                ?: (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1)
-                    activity.referrer?.host else null)
-        return ConfigUtil.getByPackageName(packageName)
+        val packageName = activity.callingPackage
+            ?: (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) activity.referrer?.host else null)
+        var config = ConfigUtil.getByPackageName(packageName)
+        if (config.installer == null) config = config.copy(
+            installer = packageName
+        )
+        return config
     }
 
     private suspend fun resolveData(activity: Activity): List<DataEntity> {
         requestStoragePermissions(activity)
         val uris = resolveDataUris(activity)
-        if (!worker.impl.config.compatMode) return resolveOriginData(activity, uris)
-        return resolveCopyData(activity, uris)
+        val data = mutableListOf<DataEntity>()
+        uris.forEach {
+            data.addAll(resolveDataUri(activity, it))
+        }
+        return data
     }
 
     private suspend fun requestStoragePermissions(activity: Activity) {
@@ -139,12 +145,10 @@ class ActionHandler(
             if (XXPermissions.isGranted(activity, permissions)) {
                 send(null)
             } else {
-                XXPermissions.with(activity)
-                    .permission(permissions)
-                    .request { _, all ->
-                        if (all) trySend(null)
-                        else close()
-                    }
+                XXPermissions.with(activity).permission(permissions).request { _, all ->
+                    if (all) trySend(null)
+                    else close()
+                }
             }
             awaitClose { }
         }.first()
@@ -152,26 +156,26 @@ class ActionHandler(
 
     private fun resolveDataUris(activity: Activity): List<Uri> {
         val intent = activity.intent ?: throw ResolveError(
-            action = null,
-            uris = emptyList()
+            action = null, uris = emptyList()
         )
         val intentAction = intent.action ?: throw ResolveError(
-            action = null,
-            uris = emptyList()
+            action = null, uris = emptyList()
         )
 
         val uris = when (intentAction) {
             Intent.ACTION_SEND -> {
-                val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-                    intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-                else intent.getParcelableExtra(Intent.EXTRA_STREAM)
+                val uri =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) intent.getParcelableExtra(
+                        Intent.EXTRA_STREAM, Uri::class.java
+                    )
+                    else intent.getParcelableExtra(Intent.EXTRA_STREAM)
                 if (uri == null) emptyList() else listOf(uri)
             }
             Intent.ACTION_SEND_MULTIPLE -> {
-                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-                    intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java)
-                else intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM))
-                    ?: emptyList()
+                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) intent.getParcelableArrayListExtra(
+                    Intent.EXTRA_STREAM, Uri::class.java
+                )
+                else intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)) ?: emptyList()
             }
             else -> {
                 val uri = intent.data
@@ -181,63 +185,36 @@ class ActionHandler(
         }
 
         if (uris.isEmpty()) throw ResolveError(
-            action = intentAction,
-            uris = uris
+            action = intentAction, uris = uris
         )
         return uris
     }
 
-    private fun resolveOriginData(activity: Activity, uris: List<Uri>): List<DataEntity> {
-        return uris.map {
-            val path = when (it.scheme) {
-                ContentResolver.SCHEME_FILE -> it.path
-                ContentResolver.SCHEME_CONTENT -> {
-                    activity.contentResolver?.openFileDescriptor(it, "r")?.use {
-                        val fd = "/proc/self/fd/${it.fd}"
-                        val path = Os.readlink(fd)
-                        if (path != fd) path else null
-                    }
-                }
-                else -> null
-            } ?: throw Error("bad uri: $it")
-            DataEntity.FileEntity(path)
-        }
+    private fun resolveDataUri(activity: Activity, uri: Uri): List<DataEntity> {
+        if (uri.scheme == ContentResolver.SCHEME_FILE) return resolveDataFileUri(activity, uri)
+        return resolveDataContentFile(activity, uri)
     }
 
-    private fun resolveCopyData(activity: Activity, uris: List<Uri>): List<DataEntity> {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            uris.map {
-                when (it.scheme) {
-                    ContentResolver.SCHEME_CONTENT -> {
-                        activity.contentResolver.openInputStream(it)?.use { inputStream ->
-                            val path = cachePath + "/${System.currentTimeMillis()}"
-                            File(path).outputStream().use { outputStream ->
-                                inputStream.copyTo(outputStream)
-                            }
-                            DataEntity.FileEntity(path)
-                        }
-                    }
-                    ContentResolver.SCHEME_FILE -> {
-                        val path = it.path ?: throw Error(
-                            "bad uri: $it"
-                        )
-                        DataEntity.FileEntity(path)
-                    }
-                    else -> null
-                } ?: throw Error("bad uri: $it")
-            }
-        } else {
-            uris.map {
-                val path = it.path
-                if (
-                    (it.scheme != ContentResolver.SCHEME_CONTENT && it.scheme != ContentResolver.SCHEME_FILE)
-                    || path == null
-                ) throw Error(
-                    "bad uri: $it"
-                )
-                DataEntity.FileEntity(path)
-            }
-        }
+    private fun resolveDataFileUri(activity: Activity, uri: Uri): List<DataEntity> {
+        val path = uri.path ?: throw Exception("can't get uri path: $uri")
+        val data = DataEntity.FileEntity(path)
+        data.source = DataEntity.FileEntity(path)
+        return listOf(data)
+    }
+
+    private fun resolveDataContentFile(activity: Activity, uri: Uri): List<DataEntity> {
+        val pfd = activity.contentResolver?.openFileDescriptor(uri, "r")
+            ?: throw Exception("can't open file descriptor: $uri")
+        pfds.add(pfd)
+        val pid = Os.getpid()
+        val tid = Os.gettid()
+        val descriptor = pfd.fd
+        val path = "/proc/$pid/fd/$descriptor"
+        val file = File(path)
+        val data = if (file.exists() && file.canRead()) DataEntity.FileEntity(path)
+        else DataEntity.FileDescriptorEntity(pid, descriptor)
+        data.source = DataEntity.FileEntity(Os.readlink(path))
+        return listOf(data)
     }
 
     private suspend fun analyse() {
@@ -248,38 +225,43 @@ class ActionHandler(
             worker.impl.error = it
             worker.impl.progress.emit(ProgressEntity.AnalysedFailed)
             return
-        }.sortedWith(compareBy(
-            {
-                it.packageName
-            },
-            {
-                when (it) {
-                    is AppEntity.MainEntity -> ""
-                    is AppEntity.SplitEntity -> it.splitName
-                }
+        }.sortedWith(compareBy({
+            it.packageName
+        }, {
+            when (it) {
+                is AppEntity.BaseEntity -> it.name
+                is AppEntity.SplitEntity -> it.name
+                is AppEntity.DexMetadataEntity -> it.name
             }
-        )).map {
-            InstallEntity(
-                app = it,
-                selected = true
+        })).map {
+            SelectInstallEntity(
+                app = it, selected = true
             )
         }
         worker.impl.progress.emit(ProgressEntity.AnalysedSuccess)
     }
 
     private suspend fun analyseEntities(data: List<DataEntity>): List<AppEntity> =
-        AnalyserRepoImpl().doWork(worker.impl.config, data.map {
-            AnalyseEntity(it, DataType.AUTO)
-        })
+        AnalyserRepoImpl().doWork(worker.impl.config, data)
 
     private suspend fun install() {
         worker.impl.progress.emit(ProgressEntity.Installing)
         kotlin.runCatching {
-            installEntities(worker.impl.config, worker.impl.entities.filter {
-                it.selected
-            }.map {
-                it.app
-            }, InstallExtraEntity(android.os.Process.myUid() / 100000))
+            installEntities(
+                worker.impl.config,
+                worker.impl.entities.filter { it.selected }.map {
+                    InstallEntity(
+                        name = it.app.name,
+                        packageName = it.app.packageName,
+                        data = when (val app = it.app) {
+                            is AppEntity.BaseEntity -> app.data
+                            is AppEntity.SplitEntity -> app.data
+                            is AppEntity.DexMetadataEntity -> app.data
+                        }
+                    )
+                },
+                InstallExtraEntity(Os.getuid() / 100000)
+            )
         }.getOrElse {
             worker.impl.error = it
             worker.impl.progress.emit(ProgressEntity.InstallFailed)
@@ -289,13 +271,9 @@ class ActionHandler(
     }
 
     private suspend fun installEntities(
-        config: ConfigEntity,
-        entities: List<AppEntity>,
-        extra: InstallExtraEntity
-    ) = AuthorizerInstallerRepoImpl().doWork(
-        config,
-        entities,
-        extra
+        config: ConfigEntity, entities: List<InstallEntity>, extra: InstallExtraEntity
+    ) = com.rosan.installer.data.app.model.impl.InstallerRepoImpl().doWork(
+        config, entities, extra
     )
 
     private suspend fun finish() {

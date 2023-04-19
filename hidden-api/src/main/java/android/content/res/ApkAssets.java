@@ -36,6 +36,11 @@ public class ApkAssets {
         return null;
     }
 
+    public static ApkAssets loadFromFd(FileDescriptor fd,
+                                       String friendlyName, boolean system, boolean forceSharedLibrary) {
+        return null;
+    }
+
     public static ApkAssets loadOverlayFromPath(String idmapPath,
                                                 int flags) throws IOException {
         return null;

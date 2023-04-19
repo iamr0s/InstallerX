@@ -23,7 +23,6 @@
         android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-
         android:theme="@style/Theme.Installer">
 
         <activity
@@ -95,8 +94,8 @@
         </provider>
 
         <meta-data
-            android:name="BUILD_LEVEL"
-            android:value="${buildLevel]" />
+            android:name="ScopedStorage"
+            android:value="true" />
     </application>
 
 </manifest>

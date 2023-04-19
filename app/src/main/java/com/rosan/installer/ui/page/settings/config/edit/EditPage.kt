@@ -124,7 +124,7 @@ fun EditPage(
             item { DataCustomizeAuthorizerWidget(viewModel = viewModel) }
             item { DataInstallModeWidget(viewModel = viewModel) }
 //            item { DataAnalyserWidget(viewModel = viewModel) }
-            item { DataCompatModeWidget(viewModel = viewModel) }
+//            item { DataCompatModeWidget(viewModel = viewModel) }
             item { DataDeclareInstallerWidget(viewModel = viewModel) }
             item { DataInstallerWidget(viewModel = viewModel) }
             item { DataForAllUserWidget(viewModel = viewModel) }

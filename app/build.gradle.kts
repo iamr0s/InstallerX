@@ -25,8 +25,8 @@ android {
         applicationId = "com.rosan.installer.x"
         minSdk = 21
         targetSdk = 33
-        versionCode = 3
-        versionName = "1.2"
+        versionCode = 9
+        versionName = "1.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

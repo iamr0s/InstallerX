@@ -14,11 +14,11 @@ data class AppEntityInfo(
 )
 
 fun AppEntity.getInfo(context: Context): AppEntityInfo = when (this) {
-    is AppEntity.MainEntity -> AppEntityInfo(
-        this.icon ?: ContextCompat.getDrawable(context, android.R.drawable.sym_def_app_icon),
-        this.label ?: this.packageName
+    is AppEntity.BaseEntity -> AppEntityInfo(
+        icon = this.icon ?: ContextCompat.getDrawable(context, android.R.drawable.sym_def_app_icon),
+        title = this.label ?: this.packageName
     )
-    is AppEntity.SplitEntity -> {
+    else -> {
         val packageManager = context.packageManager
         var applicationInfo: ApplicationInfo? = null
         try {
@@ -35,8 +35,8 @@ fun AppEntity.getInfo(context: Context): AppEntityInfo = when (this) {
         val icon = applicationInfo?.loadIcon(packageManager)
         val label = applicationInfo?.loadLabel(packageManager)?.toString()
         AppEntityInfo(
-            icon ?: ContextCompat.getDrawable(context, android.R.drawable.sym_def_app_icon),
-            label ?: this.splitName
+            icon = icon ?: ContextCompat.getDrawable(context, android.R.drawable.sym_def_app_icon),
+            title = label ?: this.packageName
         )
     }
 }
@@ -47,24 +47,10 @@ fun List<AppEntity>.sortedBest(): List<AppEntity> = this.sortedWith(
             it.packageName
         },
         {
-            when (it) {
-                is AppEntity.MainEntity -> ""
-                is AppEntity.SplitEntity -> it.splitName
-            }
+            it.name
         }
     )
 )
 
-fun List<AppEntity>.getInfo(context: Context): AppEntityInfo = this.sortedWith(
-    compareBy(
-        {
-            it.packageName
-        },
-        {
-            when (it) {
-                is AppEntity.MainEntity -> ""
-                is AppEntity.SplitEntity -> it.splitName
-            }
-        }
-    )
-).first().getInfo(context)
+fun List<AppEntity>.getInfo(context: Context): AppEntityInfo =
+    this.sortedBest().first().getInfo(context)

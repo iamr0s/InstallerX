@@ -8,21 +8,36 @@ import kotlinx.serialization.Serializable
 sealed class AppEntity {
     abstract val packageName: String
 
+    abstract val name: String
+
     @Serializable
-    data class MainEntity(
-        val data: DataEntity,
+    data class BaseEntity(
         override val packageName: String,
+        val data: DataEntity,
         val versionCode: Long,
         val versionName: String,
         val label: String?,
         @Serializable(with = DrawableSerializer::class)
         val icon: Drawable?
-    ) : AppEntity()
+    ) : AppEntity() {
+        override val name = "base.apk"
+    }
 
     @Serializable
     data class SplitEntity(
-        val data: DataEntity,
         override val packageName: String,
-        val splitName: String,
-    ) : AppEntity()
+        val data: DataEntity,
+        val splitName: String
+    ) : AppEntity() {
+        override val name = "$splitName.apk"
+    }
+
+    @Serializable
+    data class DexMetadataEntity(
+        override val packageName: String,
+        val data: DataEntity,
+        val dmName: String
+    ) : AppEntity() {
+        override val name = "base.dm"
+    }
 }

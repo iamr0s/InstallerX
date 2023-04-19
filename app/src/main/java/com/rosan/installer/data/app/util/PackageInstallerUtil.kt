@@ -7,6 +7,8 @@ import org.koin.core.component.get
 
 class PackageInstallerUtil {
     companion object : KoinComponent {
+        const val EXTRA_LEGACY_STATUS = "android.content.pm.extra.LEGACY_STATUS"
+
         private val installFlagsField = get<ReflectRepo>().getDeclaredField(
             PackageInstaller.SessionParams::class.java,
             "installFlags"

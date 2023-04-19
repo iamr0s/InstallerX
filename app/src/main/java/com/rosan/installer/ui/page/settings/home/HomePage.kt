@@ -3,7 +3,6 @@ package com.rosan.installer.ui.page.settings.home
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,15 +18,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
-import com.rosan.dhizuku.api.Dhizuku
-import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
-import com.rosan.installer.BuildConfig
 import com.rosan.installer.R
 import com.rosan.installer.build.Level
 import com.rosan.installer.build.RsConfig
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,21 +79,11 @@ fun StatusWidget() {
         Level.UNSTABLE -> stringResource(id = R.string.unstable)
     }
 
-    val context = LocalContext.current
     CardWidget(
         colors = CardDefaults.elevatedCardColors(
             containerColor = containerColor,
             contentColor = onContainerColor
         ),
-        onClick = {
-            GlobalScope.launch(Dispatchers.IO) {
-                Dhizuku.requestPermission(context, object : DhizukuRequestPermissionListener() {
-                    override fun onRequestPermission(grantResult: Int) {
-                        Log.e("r0s", "grant $grantResult")
-                    }
-                })
-            }
-        },
         icon = {
             Image(
                 modifier = Modifier
@@ -125,7 +108,7 @@ fun StatusWidget() {
             Box(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     modifier = Modifier.align(Alignment.Center),
-                    text = "$level [${if (BuildConfig.DEBUG) "debug " else ""}${RsConfig.versionName} (${RsConfig.versionCode})]",
+                    text = "$level [${RsConfig.versionName} (${RsConfig.versionCode})]",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }

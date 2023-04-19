@@ -31,11 +31,6 @@ class InstallerActivity : ComponentActivity(), KoinComponent {
 
     private var installer by mutableStateOf<InstallerRepo?>(null)
 
-    override fun onPause() {
-        installer?.background(true)
-        super.onPause()
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         restoreInstaller(savedInstanceState)

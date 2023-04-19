@@ -1,6 +1,6 @@
 package com.rosan.installer.data.process.model.impl
 
-import com.rosan.installer.data.app.model.entity.AppEntity
+import com.rosan.installer.data.app.model.entity.InstallEntity
 import com.rosan.installer.data.app.model.entity.InstallExtraEntity
 import com.rosan.installer.data.app.model.impl.installer.ProcessInstallerRepoImpl
 import com.rosan.installer.data.process.repo.ProcessRepo
@@ -29,7 +29,7 @@ class InstallerProcessRepoImpl {
                 list.add(stdinBytes(len + 1).decodeToString(0, len))
             }
             val config = serializer.decodeFromHexString<ConfigEntity>(list[0])
-            val entities = serializer.decodeFromHexString<List<AppEntity>>(list[1])
+            val entities = serializer.decodeFromHexString<List<InstallEntity>>(list[1])
             val extra = serializer.decodeFromHexString<InstallExtraEntity>(list[2])
             ProcessInstallerRepoImpl().doWork(config, entities, extra)
         }

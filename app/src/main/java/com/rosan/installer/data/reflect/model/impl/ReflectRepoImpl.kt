@@ -6,8 +6,20 @@ import java.lang.reflect.Field
 import java.lang.reflect.Method
 
 class ReflectRepoImpl : ReflectRepo {
+    override fun getConstructors(clazz: Class<*>): Array<Constructor<*>> = clazz.constructors
+    override fun getDeclaredConstructors(clazz: Class<*>): Array<Constructor<*>> =
+        clazz.declaredConstructors
+
+    override fun getFields(clazz: Class<*>): Array<Field> = clazz.fields
+
+    override fun getDeclaredFields(clazz: Class<*>): Array<Field> = clazz.declaredFields
+
+    override fun getMethods(clazz: Class<*>): Array<Method> = clazz.methods
+
+    override fun getDeclaredMethods(clazz: Class<*>): Array<Method> = clazz.declaredMethods
+
     override fun getConstructor(clazz: Class<*>, vararg parameterTypes: Class<*>): Constructor<*>? {
-        for (constructor in clazz.constructors) {
+        for (constructor in getConstructors(clazz)) {
             val expectedTypes = constructor.parameterTypes
             if (expectedTypes.size != parameterTypes.size) continue
             for (i in expectedTypes.indices)
@@ -21,7 +33,7 @@ class ReflectRepoImpl : ReflectRepo {
         clazz: Class<*>,
         vararg parameterTypes: Class<*>
     ): Constructor<*>? {
-        for (constructor in clazz.declaredConstructors) {
+        for (constructor in getDeclaredConstructors(clazz)) {
             val expectedTypes = constructor.parameterTypes
             if (expectedTypes.size != parameterTypes.size) continue
             for (i in expectedTypes.indices)
@@ -32,7 +44,7 @@ class ReflectRepoImpl : ReflectRepo {
     }
 
     override fun getField(clazz: Class<*>, name: String): Field? {
-        for (field in clazz.fields) {
+        for (field in getFields(clazz)) {
             if (field.name != name) continue
             return field
         }
@@ -40,7 +52,7 @@ class ReflectRepoImpl : ReflectRepo {
     }
 
     override fun getDeclaredField(clazz: Class<*>, name: String): Field? {
-        for (field in clazz.declaredFields) {
+        for (field in getDeclaredFields(clazz)) {
             if (field.name != name) continue
             return field
         }
@@ -52,7 +64,7 @@ class ReflectRepoImpl : ReflectRepo {
         name: String,
         vararg parameterTypes: Class<*>
     ): Method? {
-        for (method in clazz.methods) {
+        for (method in getMethods(clazz)) {
             if (method.name != name) continue
             val expectedTypes = method.parameterTypes
             if (expectedTypes.size != parameterTypes.size) continue
@@ -68,7 +80,7 @@ class ReflectRepoImpl : ReflectRepo {
         name: String,
         vararg parameterTypes: Class<*>
     ): Method? {
-        for (method in clazz.declaredMethods) {
+        for (method in getDeclaredMethods(clazz)) {
             if (method.name != name) continue
             val expectedTypes = method.parameterTypes
             if (expectedTypes.size != parameterTypes.size) continue

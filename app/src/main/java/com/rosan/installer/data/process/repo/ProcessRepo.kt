@@ -1,13 +1,12 @@
 package com.rosan.installer.data.process.repo
 
 import android.content.Context
-import com.rosan.installer.data.common.model.entity.ErrorEntity
+import com.rosan.installer.data.common.model.entity.serializer.ThrowableSerializer
 import com.rosan.installer.di.init.processModules
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
@@ -86,13 +85,14 @@ abstract class ProcessRepo {
         }.exceptionOrNull()
         setIgnoreWarning(false)
         if (throwable == null) return@runBlocking
-        if (throwable is ErrorEntity) {
-            val serializer = get<ProtoBuf>()
-            withContext(Dispatchers.IO) {
-                System.out.write(serializer.encodeToByteArray(throwable))
+        val serializer = get<ProtoBuf>()
+        withContext(Dispatchers.IO) {
+            kotlin.runCatching {
+                System.out.write(serializer.encodeToByteArray(ThrowableSerializer(), throwable))
+                System.out.flush()
+            }.onFailure {
+                throwable.printStackTrace(PrintStream(System.err))
             }
-        } else {
-            throwable.printStackTrace(System.err)
         }
         exitProcess(126)
     }

@@ -52,37 +52,32 @@ class SettingsActivity : ComponentActivity(), KoinComponent {
         }
         if (agreed) return
 
-        AlertDialog(
-            onDismissRequest = { },
-            title = {
-                Text(text = stringResource(id = R.string.agreement_title))
-            },
-            text = {
-                val textColor = AlertDialogDefaults.textContentColor.toArgb()
-                AndroidView(factory = {
-                    TextView(it).apply {
-                        setTextColor(textColor)
-                        movementMethod = LinkMovementMethod.getInstance()
-                        text = HtmlCompat.fromHtml(
-                            context.getString(R.string.agreement_text),
-                            HtmlCompat.FROM_HTML_MODE_COMPACT
-                        )
-                    }
-                })
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    this@SettingsActivity.finish()
-                }) {
-                    Text(text = stringResource(id = R.string.cancel))
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    agreed = true
-                }) {
-                    Text(text = stringResource(id = R.string.agree))
+        AlertDialog(onDismissRequest = { }, title = {
+            Text(text = stringResource(id = R.string.agreement_title))
+        }, text = {
+            val textColor = AlertDialogDefaults.textContentColor.toArgb()
+            AndroidView(factory = {
+                TextView(it).apply {
+                    setTextColor(textColor)
+                    movementMethod = LinkMovementMethod.getInstance()
+                    text = HtmlCompat.fromHtml(
+                        context.getString(R.string.agreement_text),
+                        HtmlCompat.FROM_HTML_MODE_COMPACT
+                    )
                 }
             })
+        }, dismissButton = {
+            TextButton(onClick = {
+                this@SettingsActivity.finish()
+            }) {
+                Text(text = stringResource(id = R.string.cancel))
+            }
+        }, confirmButton = {
+            TextButton(onClick = {
+                agreed = true
+            }) {
+                Text(text = stringResource(id = R.string.agree))
+            }
+        })
     }
 }

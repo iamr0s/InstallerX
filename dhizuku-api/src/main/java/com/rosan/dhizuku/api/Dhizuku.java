@@ -78,6 +78,10 @@ public class Dhizuku {
         }
     }
 
+    public static void requestPermission(DhizukuRequestPermissionListener listener) {
+        requestPermission(mContext, listener);
+    }
+
     public static void requestPermission(Context context, DhizukuRequestPermissionListener listener) {
         Bundle bundle = new Bundle();
         bundle.putInt(DhizukuVariables.PARAM_CLIENT_UID, context.getApplicationInfo().uid);

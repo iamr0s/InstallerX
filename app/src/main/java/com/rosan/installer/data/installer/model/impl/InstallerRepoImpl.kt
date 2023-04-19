@@ -5,31 +5,19 @@ import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.work.CoroutineWorker
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.WorkerParameters
-import androidx.work.await
-import androidx.work.workDataOf
+import androidx.work.*
 import com.rosan.installer.data.app.model.entity.DataEntity
-import com.rosan.installer.data.installer.model.entity.InstallEntity
 import com.rosan.installer.data.installer.model.entity.ProgressEntity
+import com.rosan.installer.data.installer.model.entity.SelectInstallEntity
 import com.rosan.installer.data.installer.model.impl.installer.ActionHandler
 import com.rosan.installer.data.installer.model.impl.installer.BroadcastHandler
 import com.rosan.installer.data.installer.model.impl.installer.ForegroundInfoHandler
 import com.rosan.installer.data.installer.model.impl.installer.ProgressHandler
 import com.rosan.installer.data.installer.repo.InstallerRepo
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import java.util.*
@@ -76,7 +64,7 @@ class InstallerRepoImpl private constructor() : InstallerRepo, KoinComponent {
 
     override var data: List<DataEntity> by mutableStateOf(emptyList())
 
-    override var entities: List<InstallEntity> by mutableStateOf(emptyList())
+    override var entities: List<SelectInstallEntity> by mutableStateOf(emptyList())
 
     override val progress: MutableSharedFlow<ProgressEntity> =
         MutableStateFlow(ProgressEntity.Ready)

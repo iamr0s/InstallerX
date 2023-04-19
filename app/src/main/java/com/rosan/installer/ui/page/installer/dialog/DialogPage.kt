@@ -240,7 +240,7 @@ fun installChoiceParams(
                                 .align(Alignment.CenterVertically)
                                 .size(32.dp),
                             painter = rememberDrawablePainter(
-                                drawable = if (item.app is AppEntity.MainEntity) item.app.icon
+                                drawable = if (item.app is AppEntity.BaseEntity) item.app.icon
                                     ?: defaultAppDrawable()
                                 else null
                             ),
@@ -252,7 +252,7 @@ fun installChoiceParams(
                                 .align(Alignment.CenterVertically)
                         ) {
                             when (val app = item.app) {
-                                is AppEntity.MainEntity -> {
+                                is AppEntity.BaseEntity -> {
                                     app.label?.let {
                                         Text(
                                             text = it, style = MaterialTheme.typography.titleMedium
@@ -270,6 +270,16 @@ fun installChoiceParams(
                                 is AppEntity.SplitEntity -> {
                                     Text(
                                         text = app.splitName,
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    Text(
+                                        text = app.packageName,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                                is AppEntity.DexMetadataEntity -> {
+                                    Text(
+                                        text = app.dmName,
                                         style = MaterialTheme.typography.titleMedium
                                     )
                                     Text(
@@ -312,8 +322,9 @@ fun installParams(
     return AlertDialogParams(centerIcon = {
         defaultIcon(
             when (entity) {
-                is AppEntity.MainEntity -> entity.icon
+                is AppEntity.BaseEntity -> entity.icon
                 is AppEntity.SplitEntity -> installed?.icon
+                is AppEntity.DexMetadataEntity -> installed?.icon
             }
         )
     }, centerTitle = {
@@ -327,8 +338,9 @@ fun installParams(
                 Text(
                     modifier = Modifier.align(Alignment.CenterVertically),
                     text = when (entity) {
-                        is AppEntity.MainEntity -> entity.label
+                        is AppEntity.BaseEntity -> entity.label
                         is AppEntity.SplitEntity -> installed?.label
+                        is AppEntity.DexMetadataEntity -> installed?.label
                     } ?: entity.packageName
                 )
                 Icon(
@@ -343,7 +355,7 @@ fun installParams(
                     contentDescription = null
                 )
             }
-            if (installed == null && entity is AppEntity.MainEntity) Text(
+            if (installed == null && entity is AppEntity.BaseEntity) Text(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally),
                 text = stringResource(
@@ -353,7 +365,7 @@ fun installParams(
                 ),
                 style = MaterialTheme.typography.bodyMedium,
                 softWrap = false
-            ) else if (installed != null && entity is AppEntity.MainEntity) Text(
+            ) else if (installed != null && entity is AppEntity.BaseEntity) Text(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally),
                 text = stringResource(
@@ -377,7 +389,7 @@ fun installParams(
     })
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun installPrepareParams(
     installer: InstallerRepo, viewModel: DialogViewModel
