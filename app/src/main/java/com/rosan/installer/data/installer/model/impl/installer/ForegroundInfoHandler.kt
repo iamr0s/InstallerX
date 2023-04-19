@@ -27,9 +27,9 @@ class ForegroundInfoHandler(
 
         private const val InstallerBackgroundChannel = "installer_background_channel"
 
-        private const val WorkingIcon = R.drawable.round_hourglass_empty_black_24
+        private val WorkingIcon = R.drawable.round_hourglass_empty_black_24
 
-        private const val PausingIcon = R.drawable.round_hourglass_disabled_black_24
+        private val PausingIcon = R.drawable.round_hourglass_disabled_black_24
     }
 
     private var job: Job? = null

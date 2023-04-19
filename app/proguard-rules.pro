@@ -63,7 +63,7 @@
 #    static <1>$$serializer INSTANCE;
 #}
 
--keep public class android.** {*;}
+-keep public interface ** extends android.os.IInterface {*;}
 -keep public class com.rosan.installer.App {*;}
 -keep public class com.rosan.installer.ui.activity.** extends android.app.Activity
 -keep public class com.rosan.installer.data.process.model.impl.** {
@@ -79,3 +79,5 @@
 #-keep interface androidx.core.content.FileProvider$PathStrategy {*;}
 
 -keep class rikka.shizuku.ShizukuProvider
+
+-dontwarn **

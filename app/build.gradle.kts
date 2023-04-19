@@ -23,6 +23,7 @@ android {
         // If you use InstallerX source code, package it into apk or other installation package format
         // Please change the applicationId to one that does not conflict with any official release.
         applicationId = "com.rosan.installer.x"
+        namespace = "com.rosan.installer"
         minSdk = 21
         targetSdk = 33
         versionCode = 9
@@ -80,31 +81,39 @@ android {
         create("unstable") {
             dimension = "level"
             isDefault = true
-            buildConfigField("int", "BUILD_LEVEL", "0")
+            applicationVariants.all {
+                buildConfigField("int", "BUILD_LEVEL", "0")
+            }
         }
 
         create("preview") {
             dimension = "level"
-            buildConfigField("int", "BUILD_LEVEL", "1")
+            applicationVariants.all {
+                buildConfigField("int", "BUILD_LEVEL", "1")
+            }
         }
 
         create("stable") {
             dimension = "level"
-            buildConfigField("int", "BUILD_LEVEL", "2")
+            applicationVariants.all {
+                buildConfigField("int", "BUILD_LEVEL", "2")
+            }
         }
     }
 
     compileOptions {
-        targetCompatibility = JavaVersion.VERSION_11
-        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_17
     }
 
     kotlin {
-        jvmToolchain(11)
+        jvmToolchain(17)
     }
 
     buildFeatures {
+        buildConfig = true
         compose = true
+        aidl = true
     }
 
     composeOptions {

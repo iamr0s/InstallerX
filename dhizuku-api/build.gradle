@@ -3,15 +3,12 @@ plugins {
 }
 
 android {
+    namespace 'com.rosan.dhizuku.api'
     compileSdkVersion 33
 
     defaultConfig {
         minSdkVersion 19
         targetSdkVersion 33
-    }
-
-    buildFeatures {
-        buildConfig false
     }
 
     compileOptions {
