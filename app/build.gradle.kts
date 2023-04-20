@@ -26,7 +26,7 @@ android {
         namespace = "com.rosan.installer"
         minSdk = 21
         targetSdk = 33
-        versionCode = 9
+        versionCode = 10
         versionName = "1.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -81,24 +81,25 @@ android {
         create("unstable") {
             dimension = "level"
             isDefault = true
-            applicationVariants.all {
-                buildConfigField("int", "BUILD_LEVEL", "0")
-            }
         }
 
         create("preview") {
             dimension = "level"
-            applicationVariants.all {
-                buildConfigField("int", "BUILD_LEVEL", "1")
-            }
         }
 
         create("stable") {
             dimension = "level"
-            applicationVariants.all {
-                buildConfigField("int", "BUILD_LEVEL", "2")
-            }
         }
+    }
+
+    applicationVariants.all {
+        val level = when (flavorName) {
+            "unstable" -> 0
+            "preview" -> 1
+            "stable" -> 2
+            else -> 0
+        }.toString()
+        buildConfigField("int", "BUILD_LEVEL", level)
     }
 
     compileOptions {

@@ -46,18 +46,22 @@ fun InstallInfoDialog(
     }, title = DialogInnerParams(
         DialogParamsType.InstallerInfo.id
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        Box {
             Text(
                 (if (entity is AppEntity.BaseEntity) entity.label
-                else installed?.label) ?: if (entity is AppEntity.SplitEntity) entity.splitName
-                else if (entity is AppEntity.DexMetadataEntity) entity.dmName
-                else entity.packageName, modifier = Modifier.align(Alignment.CenterVertically)
-            )
-            if (installed != null) IconButton(
+                else installed?.label) ?: when (entity) {
+                    is AppEntity.SplitEntity -> entity.splitName
+                    is AppEntity.DexMetadataEntity -> entity.dmName
+                    else -> entity.packageName
+                },
                 modifier = Modifier
-                    .align(Alignment.CenterVertically)
+                    .align(Alignment.CenterEnd)
+                    .absolutePadding(right = 32.dp)
+                    .basicMarquee()
+            )
+            IconButton(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer)
                     .size(24.dp)

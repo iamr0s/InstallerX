@@ -3,7 +3,6 @@ package com.rosan.installer.ui.page.settings.preferred
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Environment
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -140,11 +139,7 @@ fun ClearCache() {
             inProgress = true
             scope.launch(Dispatchers.IO) {
                 val paths = listOfNotNull(
-                    context.externalCacheDir?.absolutePath,
-                    context.cacheDir?.absolutePath,
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path?.let {
-                        "$it/InstallerX/cache"
-                    }
+                    context.externalCacheDir?.absolutePath
                 )
 
                 fun clearFile(file: File) {

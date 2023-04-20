@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
 import android.os.ParcelFileDescriptor
 import android.system.Os
 import androidx.annotation.RequiresApi
@@ -37,12 +36,11 @@ class ActionHandler(
 
     private val context by inject<Context>()
 
-    private val pfds = mutableListOf<ParcelFileDescriptor>()
+    private val cacheParcelFileDescriptors = mutableListOf<ParcelFileDescriptor>()
 
-    private val cachePath =
-        (Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path + "/InstallerX/cache" + "/${worker.impl.id}").also {
-            File(it).mkdirs()
-        }
+    private val cacheDirectory = "${context.externalCacheDir?.absolutePath}"
+
+    private val cacheFiles = mutableListOf<String>()
 
     override suspend fun onStart() {
         job = worker.scope.launch {
@@ -60,20 +58,15 @@ class ActionHandler(
         }
     }
 
-    private fun deleteFile(file: File) {
-        pfds.forEach {
+    override suspend fun onFinish() {
+        cacheParcelFileDescriptors.forEach {
             it.closeQuietly()
         }
-        pfds.clear()
-        if (!file.exists()) return
-        if (file.isDirectory) file.listFiles()?.forEach {
-            deleteFile(it)
+        cacheParcelFileDescriptors.clear()
+        cacheFiles.forEach {
+            File(it).delete()
         }
-        file.delete()
-    }
-
-    override suspend fun onFinish() {
-        deleteFile(File(cachePath))
+        cacheFiles.clear()
         job?.cancel()
     }
 
@@ -83,7 +76,6 @@ class ActionHandler(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requestNotificationPermission(
                 activity
             )
-            worker.impl.config = resolveConfig(activity)
         }.getOrElse {
             worker.impl.error = it
             worker.impl.progress.emit(ProgressEntity.ResolvedFailed)
@@ -117,16 +109,6 @@ class ActionHandler(
             }
             awaitClose { }
         }.first()
-    }
-
-    private suspend fun resolveConfig(activity: Activity): ConfigEntity {
-        val packageName = activity.callingPackage
-            ?: (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) activity.referrer?.host else null)
-        var config = ConfigUtil.getByPackageName(packageName)
-        if (config.installer == null) config = config.copy(
-            installer = packageName
-        )
-        return config
     }
 
     private suspend fun resolveData(activity: Activity): List<DataEntity> {
@@ -171,12 +153,14 @@ class ActionHandler(
                     else intent.getParcelableExtra(Intent.EXTRA_STREAM)
                 if (uri == null) emptyList() else listOf(uri)
             }
+
             Intent.ACTION_SEND_MULTIPLE -> {
                 (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) intent.getParcelableArrayListExtra(
                     Intent.EXTRA_STREAM, Uri::class.java
                 )
                 else intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)) ?: emptyList()
             }
+
             else -> {
                 val uri = intent.data
                 if (uri == null) emptyList()
@@ -203,18 +187,36 @@ class ActionHandler(
     }
 
     private fun resolveDataContentFile(activity: Activity, uri: Uri): List<DataEntity> {
-        val pfd = activity.contentResolver?.openFileDescriptor(uri, "r")
+        val assetFileDescriptor = activity.contentResolver?.openAssetFileDescriptor(uri, "r")
             ?: throw Exception("can't open file descriptor: $uri")
-        pfds.add(pfd)
+        val parcelFileDescriptor = assetFileDescriptor.parcelFileDescriptor
         val pid = Os.getpid()
-        val tid = Os.gettid()
-        val descriptor = pfd.fd
+        val descriptor = parcelFileDescriptor.fd
         val path = "/proc/$pid/fd/$descriptor"
-        val file = File(path)
-        val data = if (file.exists() && file.canRead()) DataEntity.FileEntity(path)
-        else DataEntity.FileDescriptorEntity(pid, descriptor)
-        data.source = DataEntity.FileEntity(Os.readlink(path))
-        return listOf(data)
+
+        // only full file, can't handle a sub-section of a file
+        if (assetFileDescriptor.declaredLength < 0) {
+
+            // file descriptor can't be pipe or socket
+            val source = Os.readlink(path)
+            if (source.startsWith('/')) {
+                cacheParcelFileDescriptors.add(parcelFileDescriptor)
+                val file = File(path)
+                val data = if (file.exists() && file.canRead()) DataEntity.FileEntity(path)
+                else DataEntity.FileDescriptorEntity(pid, descriptor)
+                data.source = DataEntity.FileEntity(source)
+                return listOf(data)
+            }
+        }
+
+        // cache it
+        val tempFile = File.createTempFile(worker.impl.id, null, File(cacheDirectory))
+        tempFile.outputStream().use {
+            assetFileDescriptor.createInputStream().copyTo(it)
+        }
+        assetFileDescriptor.closeQuietly()
+        cacheFiles.add(tempFile.absolutePath)
+        return listOf(DataEntity.FileEntity(tempFile.absolutePath))
     }
 
     private suspend fun analyse() {

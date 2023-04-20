@@ -37,13 +37,6 @@ class ProgressHandler(
     }
 
     private fun onResolved(success: Boolean) {
-        val installMode = worker.impl.config.installMode
-        if (
-            installMode == ConfigEntity.InstallMode.Notification
-            || installMode == ConfigEntity.InstallMode.AutoNotification
-        ) {
-            worker.impl.background(true)
-        }
         if (success) {
             worker.impl.analyse()
         }
