@@ -18,7 +18,6 @@ import com.rosan.installer.data.installer.model.entity.SelectInstallEntity
 import com.rosan.installer.data.installer.model.entity.error.ResolveError
 import com.rosan.installer.data.installer.model.impl.InstallerRepoImpl
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
-import com.rosan.installer.data.settings.util.ConfigUtil
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
@@ -202,7 +201,14 @@ class ActionHandler(
             if (source.startsWith('/')) {
                 cacheParcelFileDescriptors.add(parcelFileDescriptor)
                 val file = File(path)
-                val data = if (file.exists() && file.canRead()) DataEntity.FileEntity(path)
+                val data = if (
+                    file.exists() &&
+                    file.canRead() &&
+                    kotlin.runCatching {
+                        file.inputStream().use { }
+                        return@runCatching true
+                    }.getOrDefault(false)
+                ) DataEntity.FileEntity(path)
                 else DataEntity.FileDescriptorEntity(pid, descriptor)
                 data.source = DataEntity.FileEntity(source)
                 return listOf(data)

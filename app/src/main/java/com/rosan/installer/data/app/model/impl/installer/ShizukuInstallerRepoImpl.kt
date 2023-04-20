@@ -2,8 +2,10 @@ package com.rosan.installer.data.app.model.impl.installer
 
 import android.content.pm.PackageManager
 import android.os.IBinder
+import com.rosan.installer.data.console.model.exception.ShizukuNotWorkException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuBinderWrapper
@@ -21,9 +23,11 @@ class ShizukuInstallerRepoImpl : IBinderInstallerRepoImpl() {
                 val listener =
                     Shizuku.OnRequestPermissionResultListener { _requestCode, grantResult ->
                         if (_requestCode != requestCode) return@OnRequestPermissionResultListener
-                        kotlin.runCatching { ShizukuBinderWrapper(iBinder) }
-                            .onFailure { close(it) }
-                            .onSuccess { trySend(it) }
+                        kotlin.runCatching {
+                            if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED)
+                                ShizukuBinderWrapper(iBinder)
+                            else throw Exception("sui/shizuku permission denied")
+                        }.onFailure { close(it) }.onSuccess { trySend(it) }
                     }
                 Shizuku.addRequestPermissionResultListener(listener)
                 Shizuku.requestPermission(requestCode)
@@ -31,6 +35,8 @@ class ShizukuInstallerRepoImpl : IBinderInstallerRepoImpl() {
                     Shizuku.removeRequestPermissionResultListener(listener)
                 }
             }
+        }.catch {
+            throw ShizukuNotWorkException(it)
         }.first()
     }
 }

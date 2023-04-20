@@ -1,10 +1,12 @@
 package com.rosan.installer.data.console.model.impl
 
 import android.content.pm.PackageManager
+import com.rosan.installer.data.console.model.exception.ShizukuNotWorkException
 import com.rosan.installer.data.console.repo.ConsoleBuilderRepo
 import com.rosan.installer.data.console.repo.ConsoleRepo
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import rikka.shizuku.Shizuku
 
@@ -42,6 +44,8 @@ class ShizukuConsoleBuilderRepoImpl : ConsoleBuilderRepo() {
                     Shizuku.removeRequestPermissionResultListener(listener)
                 }
             }
+        }.catch {
+            throw ShizukuNotWorkException(it)
         }.first()
     }
 }
