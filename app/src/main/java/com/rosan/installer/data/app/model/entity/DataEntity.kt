@@ -1,6 +1,5 @@
 package com.rosan.installer.data.app.model.entity
 
-import android.os.Build
 import android.system.Os
 import android.system.OsConstants
 import kotlinx.serialization.Serializable
@@ -56,9 +55,6 @@ sealed class DataEntity(open var source: DataEntity? = null) {
         override fun getInputStream(): InputStream {
             val fileDescriptor = getFileDescriptor()
             if (fileDescriptor != null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    Os.fcntlInt(fileDescriptor, OsConstants.F_DUPFD_CLOEXEC, 0)
-                }
                 return FileInputStream(fileDescriptor)
             }
             return File("/proc/$pid/fd/$descriptor").inputStream()

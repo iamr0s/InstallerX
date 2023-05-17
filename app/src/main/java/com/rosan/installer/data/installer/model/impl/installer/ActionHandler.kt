@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.ParcelFileDescriptor
@@ -18,6 +19,7 @@ import com.rosan.installer.data.installer.model.entity.SelectInstallEntity
 import com.rosan.installer.data.installer.model.entity.error.ResolveError
 import com.rosan.installer.data.installer.model.impl.InstallerRepoImpl
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
+import com.rosan.installer.data.settings.util.ConfigUtil
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
@@ -75,6 +77,7 @@ class ActionHandler(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requestNotificationPermission(
                 activity
             )
+            worker.impl.config = resolveConfig(activity)
         }.getOrElse {
             worker.impl.error = it
             worker.impl.progress.emit(ProgressEntity.ResolvedFailed)
@@ -92,6 +95,16 @@ class ActionHandler(
             return
         }
         worker.impl.progress.emit(ProgressEntity.ResolveSuccess)
+    }
+
+    private suspend fun resolveConfig(activity: Activity): ConfigEntity {
+        val packageName = activity.callingPackage
+            ?: (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) activity.referrer?.host else null)
+        var config = ConfigUtil.getByPackageName(packageName)
+        if (config.installer == null) config = config.copy(
+            installer = packageName
+        )
+        return config
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -185,12 +198,28 @@ class ActionHandler(
         return listOf(data)
     }
 
-    private fun resolveDataContentFile(activity: Activity, uri: Uri): List<DataEntity> {
+    private fun resolveDataContentFile(
+        activity: Activity,
+        uri: Uri,
+        retry: Int = 3
+    ): List<DataEntity> {
+        val retry = retry - 1
+        // wait for PermissionRecords ok.
+        // if not, maybe show Uri Read Permission Denied
+        if (activity.checkCallingOrSelfUriPermission(
+                uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+            ) != PackageManager.PERMISSION_GRANTED &&
+            retry > 0
+        ) {
+            Thread.sleep(50)
+            return resolveDataContentFile(activity, uri, retry - 1)
+        }
         val assetFileDescriptor = activity.contentResolver?.openAssetFileDescriptor(uri, "r")
             ?: throw Exception("can't open file descriptor: $uri")
         val parcelFileDescriptor = assetFileDescriptor.parcelFileDescriptor
         val pid = Os.getpid()
         val descriptor = parcelFileDescriptor.fd
+//        val path = "/proc/$pid/task/${Os.gettid()}/fd/$descriptor"
         val path = "/proc/$pid/fd/$descriptor"
 
         // only full file, can't handle a sub-section of a file
@@ -201,14 +230,10 @@ class ActionHandler(
             if (source.startsWith('/')) {
                 cacheParcelFileDescriptors.add(parcelFileDescriptor)
                 val file = File(path)
-                val data = if (
-                    file.exists() &&
-                    file.canRead() &&
-                    kotlin.runCatching {
+                val data = if (file.exists() && file.canRead() && kotlin.runCatching {
                         file.inputStream().use { }
                         return@runCatching true
-                    }.getOrDefault(false)
-                ) DataEntity.FileEntity(path)
+                    }.getOrDefault(false)) DataEntity.FileEntity(path)
                 else DataEntity.FileDescriptorEntity(pid, descriptor)
                 data.source = DataEntity.FileEntity(source)
                 return listOf(data)
@@ -255,20 +280,17 @@ class ActionHandler(
     private suspend fun install() {
         worker.impl.progress.emit(ProgressEntity.Installing)
         kotlin.runCatching {
-            installEntities(
-                worker.impl.config,
-                worker.impl.entities.filter { it.selected }.map {
-                    InstallEntity(
-                        name = it.app.name,
-                        packageName = it.app.packageName,
-                        data = when (val app = it.app) {
-                            is AppEntity.BaseEntity -> app.data
-                            is AppEntity.SplitEntity -> app.data
-                            is AppEntity.DexMetadataEntity -> app.data
-                        }
-                    )
-                },
-                InstallExtraEntity(Os.getuid() / 100000)
+            installEntities(worker.impl.config, worker.impl.entities.filter { it.selected }.map {
+                InstallEntity(
+                    name = it.app.name,
+                    packageName = it.app.packageName,
+                    data = when (val app = it.app) {
+                        is AppEntity.BaseEntity -> app.data
+                        is AppEntity.SplitEntity -> app.data
+                        is AppEntity.DexMetadataEntity -> app.data
+                    }
+                )
+            }, InstallExtraEntity(Os.getuid() / 100000)
             )
         }.getOrElse {
             worker.impl.error = it

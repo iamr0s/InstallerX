@@ -1,4 +1,4 @@
-package com.rosan.installer.ui.page.installer.dialog2
+package com.rosan.installer.ui.page.installer.dialog
 
 sealed class DialogParamsType(val id: String) {
     object IconWorking : DialogParamsType("icon_working")

@@ -1,22 +1,22 @@
-package com.rosan.installer.ui.page.installer.dialog2.inner
+package com.rosan.installer.ui.page.installer.dialog.inner
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.rosan.installer.R
 import com.rosan.installer.data.installer.repo.InstallerRepo
-import com.rosan.installer.ui.page.installer.dialog2.*
+import com.rosan.installer.ui.page.installer.dialog.*
 
 @Composable
-fun ResolvingDialog(
+fun AnalysingDialog(
     installer: InstallerRepo, viewModel: DialogViewModel
 ): DialogParams {
     return DialogParams(icon = DialogInnerParams(
         DialogParamsType.IconWorking.id, workingIcon
     ), title = DialogInnerParams(
-        DialogParamsType.InstallerResolving.id,
+        DialogParamsType.InstallerAnalysing.id,
     ) {
-        Text(stringResource(R.string.installer_resolving))
+        Text(stringResource(R.string.installer_analysing))
     }, buttons = DialogButtons(
         DialogParamsType.ButtonsCancel.id
     ) {

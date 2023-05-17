@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
 import org.koin.core.component.KoinComponent
 
-class DhizukuInstallerRepoImpl : IBinderInstallerRepoImpl(), KoinComponent {
+object DhizukuInstallerRepoImpl : IBinderInstallerRepoImpl(), KoinComponent {
     override suspend fun iBinderWrapper(iBinder: IBinder): IBinder {
         return callbackFlow<IBinder> {
             if (Dhizuku.isPermissionGranted()) {

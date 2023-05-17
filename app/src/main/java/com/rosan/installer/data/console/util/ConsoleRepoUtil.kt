@@ -22,7 +22,8 @@ class ConsoleRepoUtil {
 
         suspend fun su(action: DefaultConsoleBuilderRepoImpl.() -> Unit): ConsoleRepo {
             val repo = DefaultConsoleBuilderRepoImpl()
-            repo.command("su", "--mount-master")
+//            repo.command("su", "--mount-master")
+            repo.command("su")
             repo.action()
             return repo.open()
         }

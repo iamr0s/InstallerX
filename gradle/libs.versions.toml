@@ -63,7 +63,6 @@ lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", versio
 
 # Pager layouts
 # https://google.github.io/accompanist/pager/
-accompanist = { group = "com.google.accompanist", name = "accompanist-pager", version.ref = "accompanist" }
 accompanist-navigationAnimation = { group = "com.google.accompanist", name = "accompanist-navigation-animation", version.ref = "accompanist" }
 accompanist-flowlayout = { group = "com.google.accompanist", name = "accompanist-flowlayout", version.ref = "accompanist" }
 accompanist-drawablepainter = { group = "com.google.accompanist", name = "accompanist-drawablepainter", version.ref = "accompanist" }
@@ -81,3 +80,11 @@ compose-coil = { group = "io.coil-kt", name = "coil-compose", version = "2.3.0" 
 # XXPermissions
 # https://github.com/getActivity/XXPermissions
 xxpermissions = { group = "com.github.getActivity", name = "XXPermissions", version = "16.6" }
+
+# Dhizuku-API
+# https://github.com/iamr0s/Dhizuku-API
+iamr0s-dhizuku-api = { group = "io.github.iamr0s", name = "Dhizuku-API", version = "2.3" }
+
+# AndroidAppProcess
+# https://github.com/iamr0s/AndroidAppProcess
+iamr0s-androidAppProcess = { group = "io.github.iamr0s", name = "AndroidAppProcess", version = "1.1" }

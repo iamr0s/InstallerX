@@ -1,4 +1,4 @@
-package com.rosan.installer.ui.page.installer.dialog2.inner
+package com.rosan.installer.ui.page.installer.dialog.inner
 
 data class DialogButton(
     val text: String,

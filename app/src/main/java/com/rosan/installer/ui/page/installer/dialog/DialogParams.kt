@@ -1,4 +1,4 @@
-package com.rosan.installer.ui.page.installer.dialog2
+package com.rosan.installer.ui.page.installer.dialog
 
 private val emptyInnerParams = DialogInnerParams("empty")
 

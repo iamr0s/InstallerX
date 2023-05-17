@@ -6,6 +6,7 @@ pluginManagement {
         google()
         mavenCentral()
         maven { setUrl("https://maven.scijava.org/content/repositories/public/") }
+        mavenLocal()
     }
 }
 
@@ -17,14 +18,12 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven { setUrl("https://maven.scijava.org/content/repositories/public/") }
+        mavenLocal()
     }
 }
 
 rootProject.name = "InstallerX"
 include(
     ":app",
-    ":hidden-api",
-    ":dhizuku-aidl",
-    ":dhizuku-shared",
-    ":dhizuku-api"
+    ":hidden-api"
 )

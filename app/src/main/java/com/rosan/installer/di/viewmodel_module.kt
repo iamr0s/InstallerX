@@ -11,7 +11,7 @@ import org.koin.dsl.module
 
 val viewModelModule = module {
     viewModel { (installer: InstallerRepo) ->
-        com.rosan.installer.ui.page.installer.dialog2.DialogViewModel(installer)
+        com.rosan.installer.ui.page.installer.dialog.DialogViewModel(installer)
     }
 
     viewModel { (installer: InstallerRepo) ->

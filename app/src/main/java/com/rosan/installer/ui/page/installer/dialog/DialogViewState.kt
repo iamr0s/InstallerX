@@ -4,7 +4,6 @@ sealed class DialogViewState {
     object Ready : DialogViewState()
     object Resolving : DialogViewState()
     object ResolveFailed : DialogViewState()
-    object ResolveSuccess : DialogViewState()
     object Analysing : DialogViewState()
     object AnalyseFailed : DialogViewState()
     object InstallChoice : DialogViewState()

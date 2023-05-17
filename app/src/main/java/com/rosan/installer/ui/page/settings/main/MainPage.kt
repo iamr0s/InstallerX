@@ -1,5 +1,6 @@
 package com.rosan.installer.ui.page.settings.main
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Home
 import androidx.compose.material.icons.twotone.RoomPreferences
@@ -22,9 +25,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
-import com.google.accompanist.pager.ExperimentalPagerApi
-import com.google.accompanist.pager.HorizontalPager
-import com.google.accompanist.pager.rememberPagerState
 import com.rosan.installer.R
 import com.rosan.installer.ui.page.settings.config.all.AllPage
 import com.rosan.installer.ui.page.settings.home.HomePage
@@ -34,7 +34,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalPagerApi::class, DelicateCoroutinesApi::class)
+@OptIn(DelicateCoroutinesApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun MainPage(navController: NavController) {
     val pagerState = rememberPagerState()
@@ -86,7 +86,7 @@ fun MainPage(navController: NavController) {
                     .fillMaxSize()
             ) {
                 HorizontalPager(
-                    count = data.size,
+                    pageCount = data.size,
                     state = pagerState,
                     userScrollEnabled = false,
                     modifier = Modifier

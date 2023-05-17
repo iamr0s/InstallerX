@@ -26,8 +26,8 @@ android {
         namespace = "com.rosan.installer"
         minSdk = 21
         targetSdk = 33
-        versionCode = 10
-        versionName = "1.4"
+        versionCode = 12
+        versionName = "1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -132,9 +132,6 @@ android {
 dependencies {
     compileOnly(project(":hidden-api"))
 
-    implementation(project(":dhizuku-api"))
-    implementation(project(":dhizuku-aidl"))
-
     implementation(libs.androidx.core)
     implementation(libs.androidx.lifecycle)
     implementation(libs.androidx.activity.compose)
@@ -163,7 +160,6 @@ dependencies {
 
     implementation(libs.lottie.compose)
 
-    implementation(libs.accompanist)
     implementation(libs.accompanist.navigationAnimation)
     implementation(libs.accompanist.flowlayout)
     implementation(libs.accompanist.drawablepainter)
@@ -175,4 +171,8 @@ dependencies {
     implementation(libs.compose.coil)
 
     implementation(libs.xxpermissions)
+
+    implementation(libs.iamr0s.dhizuku.api)
+
+    implementation(libs.iamr0s.androidAppProcess)
 }

@@ -20,7 +20,7 @@ import kotlinx.serialization.protobuf.ProtoBuf
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 
-class ConsoleInstallerRepo : InstallerRepo, KoinComponent {
+object ConsoleInstallerRepo : InstallerRepo, KoinComponent {
     suspend fun loadConsole(
         config: ConfigEntity,
         entities: List<InstallEntity>,

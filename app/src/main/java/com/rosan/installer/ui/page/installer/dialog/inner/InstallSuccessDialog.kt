@@ -1,4 +1,4 @@
-package com.rosan.installer.ui.page.installer.dialog2.inner
+package com.rosan.installer.ui.page.installer.dialog.inner
 
 import android.content.Intent
 import android.net.Uri
@@ -9,10 +9,10 @@ import androidx.compose.ui.res.stringResource
 import com.rosan.installer.R
 import com.rosan.installer.data.common.util.addAll
 import com.rosan.installer.data.installer.repo.InstallerRepo
-import com.rosan.installer.ui.page.installer.dialog2.DialogParams
-import com.rosan.installer.ui.page.installer.dialog2.DialogParamsType
-import com.rosan.installer.ui.page.installer.dialog2.DialogViewAction
-import com.rosan.installer.ui.page.installer.dialog2.DialogViewModel
+import com.rosan.installer.ui.page.installer.dialog.DialogParams
+import com.rosan.installer.ui.page.installer.dialog.DialogParamsType
+import com.rosan.installer.ui.page.installer.dialog.DialogViewAction
+import com.rosan.installer.ui.page.installer.dialog.DialogViewModel
 
 @Composable
 fun InstallSuccessDialog(
@@ -27,6 +27,7 @@ fun InstallSuccessDialog(
                 .setData(Uri.fromParts("package", packageName, null))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         )
+        viewModel.dispatch(DialogViewAction.Background)
     }.copy(buttons = DialogButtons(
         DialogParamsType.InstallerInstallSuccess.id
     ) {

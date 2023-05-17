@@ -23,7 +23,7 @@ import com.rosan.installer.ui.widget.setting.BaseWidget
 import com.rosan.installer.ui.widget.setting.LabelWidget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.getKoin
+import org.koin.compose.getKoin
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)

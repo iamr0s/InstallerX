@@ -1,4 +1,4 @@
-package com.rosan.installer.ui.page.installer.dialog2.inner
+package com.rosan.installer.ui.page.installer.dialog.inner
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -49,7 +49,7 @@ import com.rosan.installer.data.app.model.entity.error.InstallFailedVerification
 import com.rosan.installer.data.app.model.entity.error.InstallFailedVersionDowngradeException
 import com.rosan.installer.data.console.model.exception.ShizukuNotWorkException
 import com.rosan.installer.data.installer.repo.InstallerRepo
-import com.rosan.installer.ui.page.installer.dialog2.DialogViewModel
+import com.rosan.installer.ui.page.installer.dialog.DialogViewModel
 
 val pausingIcon: @Composable () -> Unit = {
     Icon(

@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.first
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuBinderWrapper
 
-class ShizukuInstallerRepoImpl : IBinderInstallerRepoImpl() {
+object ShizukuInstallerRepoImpl : IBinderInstallerRepoImpl() {
     override suspend fun iBinderWrapper(iBinder: IBinder): IBinder {
         return callbackFlow<IBinder> {
             if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {

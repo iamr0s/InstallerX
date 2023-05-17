@@ -22,8 +22,10 @@ class AnalyserRepoImpl : AnalyserRepo {
         )
         val tasks = mutableMapOf<AnalyserRepo, MutableList<DataEntity>>()
         data.forEach {
-            val analyser = analysers[getDataType(config, it)]
-                ?: throw Exception("can't found analyser for this data: '$data'")
+            val type = kotlin.runCatching { getDataType(config, it) ?: DataType.APK }
+                .getOrDefault(DataType.APK)
+            val analyser =
+                analysers[type] ?: throw Exception("can't found analyser for this data: '$data'")
             val value = tasks[analyser] ?: mutableListOf()
             value.add(it)
             tasks[analyser] = value
@@ -44,6 +46,7 @@ class AnalyserRepoImpl : AnalyserRepo {
                     else -> null
                 }
             }
+
             else -> ZipInputStream(data.getInputStream()).use { zip ->
                 var type: DataType? = null
                 while (true) {

@@ -21,6 +21,6 @@ class App : Application() {
             modules(appModules)
         }
         Sui.init(BuildConfig.APPLICATION_ID)
-        Dhizuku.init(this)
+        Dhizuku.init()
     }
 }

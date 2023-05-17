@@ -1,14 +1,14 @@
-package com.rosan.installer.ui.page.installer.dialog2.inner
+package com.rosan.installer.ui.page.installer.dialog.inner
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.rosan.installer.data.installer.repo.InstallerRepo
-import com.rosan.installer.ui.page.installer.dialog2.DialogInnerParams
-import com.rosan.installer.ui.page.installer.dialog2.DialogParams
-import com.rosan.installer.ui.page.installer.dialog2.DialogParamsType
-import com.rosan.installer.ui.page.installer.dialog2.DialogViewModel
+import com.rosan.installer.ui.page.installer.dialog.DialogInnerParams
+import com.rosan.installer.ui.page.installer.dialog.DialogParams
+import com.rosan.installer.ui.page.installer.dialog.DialogParamsType
+import com.rosan.installer.ui.page.installer.dialog.DialogViewModel
 
 @Composable
 fun InstallingDialog(

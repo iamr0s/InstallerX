@@ -10,5 +10,5 @@ class ProcessInstallerRepoImpl : InstallerRepo {
         config: ConfigEntity,
         entities: List<InstallEntity>,
         extra: InstallExtraEntity
-    ) = DefaultInstallerRepoImpl().doWork(config, entities, extra)
+    ) = DefaultInstallerRepoImpl.doWork(config, entities, extra)
 }

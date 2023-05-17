@@ -1,4 +1,4 @@
-package com.rosan.installer.ui.page.installer.dialog2.inner
+package com.rosan.installer.ui.page.installer.dialog.inner
 
 import android.content.Intent
 import android.net.Uri
@@ -8,7 +8,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.rosan.installer.R
 import com.rosan.installer.data.installer.repo.InstallerRepo
-import com.rosan.installer.ui.page.installer.dialog2.*
+import com.rosan.installer.ui.page.installer.dialog.*
 
 @Composable
 fun InstallFailedDialog(

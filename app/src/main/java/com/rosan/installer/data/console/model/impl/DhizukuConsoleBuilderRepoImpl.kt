@@ -32,7 +32,7 @@ class DhizukuConsoleBuilderRepoImpl : ConsoleBuilderRepo(), KoinComponent {
                 send(_open())
                 awaitClose { }
             } else {
-                Dhizuku.requestPermission(context, object : DhizukuRequestPermissionListener() {
+                Dhizuku.requestPermission(object : DhizukuRequestPermissionListener() {
                     override fun onRequestPermission(grantResult: Int) {
                         kotlin.runCatching { _open() }
                             .onSuccess {

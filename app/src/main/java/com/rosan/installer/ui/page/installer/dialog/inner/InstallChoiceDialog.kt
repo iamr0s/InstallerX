@@ -1,4 +1,4 @@
-package com.rosan.installer.ui.page.installer.dialog2.inner
+package com.rosan.installer.ui.page.installer.dialog.inner
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.rosan.installer.R
 import com.rosan.installer.data.app.model.entity.AppEntity
 import com.rosan.installer.data.installer.repo.InstallerRepo
-import com.rosan.installer.ui.page.installer.dialog2.*
+import com.rosan.installer.ui.page.installer.dialog.*
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -101,7 +101,7 @@ fun InstallChoiceDialog(
                                 Text(
                                     stringResource(
                                         R.string.installer_file_path,
-                                        app.data.toString()
+                                        app.data.getSourceTop().toString()
                                     ),
                                     modifier = Modifier.basicMarquee(),
                                     style = MaterialTheme.typography.bodyMedium
@@ -124,7 +124,7 @@ fun InstallChoiceDialog(
                                 Text(
                                     stringResource(
                                         R.string.installer_file_path,
-                                        app.data.toString()
+                                        app.data.getSourceTop().toString()
                                     ),
                                     modifier = Modifier.basicMarquee(),
                                     style = MaterialTheme.typography.bodyMedium

@@ -1,11 +1,10 @@
-package com.rosan.installer.ui.page.installer.dialog2
+package com.rosan.installer.ui.page.installer.dialog
 
-import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.runtime.Composable
 import com.rosan.installer.data.installer.repo.InstallerRepo
-import com.rosan.installer.ui.page.installer.dialog2.inner.*
+import com.rosan.installer.ui.page.installer.dialog.inner.*
 
 // change the content when the id been changed
 @OptIn(ExperimentalAnimationApi::class)
@@ -28,7 +27,6 @@ fun dialogInnerWidget(
 fun DialogGenerateParams(
     installer: InstallerRepo, viewModel: DialogViewModel
 ): DialogParams {
-    Log.e("r0s", "${viewModel.state}")
     return when (viewModel.state) {
         is DialogViewState.Ready -> ReadyDialog(installer, viewModel)
         is DialogViewState.Resolving -> ResolvingDialog(installer, viewModel)

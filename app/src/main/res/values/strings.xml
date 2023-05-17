@@ -141,7 +141,7 @@
     <string name="exception_install_failed_insufficient_storage">存储空间不足，请先清理空间或卸载无用应用</string>
     <string name="exception_install_failed_duplicate_package">签名冲突（包名相同、签名不同），请先卸载原应用</string>
     <string name="exception_install_failed_no_shared_user">共享UID的程序不存在，请先下载主UID应用</string>
-    <string name="exception_install_failed_update_incompatible">更新失败，请卸载后安装</string>
+    <string name="exception_install_failed_update_incompatible">更新失败（签名或其他原因），请卸载后安装</string>
     <string name="exception_install_failed_shared_user_incompatible">与共享UID的程序签名冲突</string>
     <string name="exception_install_failed_missing_shared_library">缺失共享库</string>
     <string name="exception_install_failed_replace_couldnt_delete">无效的共享库</string>

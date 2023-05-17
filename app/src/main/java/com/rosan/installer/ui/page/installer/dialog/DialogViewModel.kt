@@ -46,7 +46,6 @@ class DialogViewModel(
                     is ProgressEntity.Ready -> DialogViewState.Ready
                     is ProgressEntity.Resolving -> DialogViewState.Resolving
                     is ProgressEntity.ResolvedFailed -> DialogViewState.ResolveFailed
-                    is ProgressEntity.ResolveSuccess -> DialogViewState.ResolveSuccess
                     is ProgressEntity.Analysing -> DialogViewState.Analysing
                     is ProgressEntity.AnalysedFailed -> DialogViewState.AnalyseFailed
                     is ProgressEntity.AnalysedSuccess ->
