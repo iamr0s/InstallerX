@@ -80,8 +80,4 @@
 
 -keep class rikka.shizuku.ShizukuProvider
 
--keep class com.rosan.app_process.** {
-    *;
-}
-
 -dontwarn **
