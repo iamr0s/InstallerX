@@ -10,7 +10,7 @@ import com.rosan.installer.data.app.model.impl.installer.ShizukuInstallerRepoImp
 import com.rosan.installer.data.app.repo.InstallerRepo
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
 
-class InstallerRepoImpl : InstallerRepo {
+object InstallerRepoImpl : InstallerRepo {
     override suspend fun doWork(
         config: ConfigEntity,
         entities: List<InstallEntity>,

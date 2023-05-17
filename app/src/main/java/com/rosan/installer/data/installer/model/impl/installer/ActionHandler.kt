@@ -302,7 +302,7 @@ class ActionHandler(
 
     private suspend fun installEntities(
         config: ConfigEntity, entities: List<InstallEntity>, extra: InstallExtraEntity
-    ) = com.rosan.installer.data.app.model.impl.InstallerRepoImpl().doWork(
+    ) = com.rosan.installer.data.app.model.impl.InstallerRepoImpl.doWork(
         config, entities, extra
     )
 
