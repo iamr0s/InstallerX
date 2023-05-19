@@ -47,6 +47,7 @@ import com.rosan.installer.data.app.model.entity.error.InstallFailedUpdateIncomp
 import com.rosan.installer.data.app.model.entity.error.InstallFailedVerificationFailureException
 import com.rosan.installer.data.app.model.entity.error.InstallFailedVerificationTimeoutException
 import com.rosan.installer.data.app.model.entity.error.InstallFailedVersionDowngradeException
+import com.rosan.installer.data.app.model.exception.RootNotWorkException
 import com.rosan.installer.data.console.model.exception.ShizukuNotWorkException
 import com.rosan.installer.data.installer.repo.InstallerRepo
 import com.rosan.installer.ui.page.installer.dialog.DialogViewModel
@@ -103,6 +104,7 @@ val errorText: ((installer: InstallerRepo, viewModel: DialogViewModel) -> (@Comp
                             is InstallFailedVersionDowngradeException -> stringResource(R.string.exception_install_failed_version_downgrade)
 
                             is ShizukuNotWorkException -> stringResource(R.string.exception_shizuku_not_work)
+                            is RootNotWorkException -> stringResource(R.string.exception_root_not_work)
                             else -> stringResource(R.string.exception_install_failed_unknown)
                         }
                         Text(text, fontWeight = FontWeight.Bold)
