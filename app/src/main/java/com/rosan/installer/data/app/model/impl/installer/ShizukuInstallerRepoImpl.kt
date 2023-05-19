@@ -6,8 +6,11 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.IBinder
 import com.rosan.installer.IShizukuUserService
+import com.rosan.installer.data.app.model.entity.InstallEntity
+import com.rosan.installer.data.app.model.entity.InstallExtraEntity
 import com.rosan.installer.data.app.model.impl.privileged.ShizukuUserService
 import com.rosan.installer.data.console.model.exception.ShizukuNotWorkException
+import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
@@ -19,6 +22,15 @@ import rikka.shizuku.ShizukuBinderWrapper
 
 object ShizukuInstallerRepoImpl : IBinderInstallerRepoImpl(), KoinComponent {
     private val context by inject<Context>()
+
+    private val userServiceArgs = Shizuku.UserServiceArgs(
+        ComponentName(
+            context,
+            ShizukuUserService::class.java
+        )
+    ).processNameSuffix("shizuku_privileged")
+
+    private var connection: ServiceConnection? = null
 
     private var service: IShizukuUserService? = null
 
@@ -53,7 +65,7 @@ object ShizukuInstallerRepoImpl : IBinderInstallerRepoImpl(), KoinComponent {
 
     override suspend fun doDeleteWork(path: String) {
         if (service == null) service = callbackFlow<IShizukuUserService> {
-            val connection = object : ServiceConnection {
+            val localConnection = object : ServiceConnection {
                 override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
                     trySend(IShizukuUserService.Stub.asInterface(service))
                 }
@@ -63,15 +75,20 @@ object ShizukuInstallerRepoImpl : IBinderInstallerRepoImpl(), KoinComponent {
                 }
             }
             Shizuku.bindUserService(
-                Shizuku.UserServiceArgs(
-                    ComponentName(
-                        context,
-                        ShizukuUserService::class.java
-                    )
-                ).processNameSuffix("shizuku_privileged"), connection
+                userServiceArgs, localConnection
             )
+            connection = localConnection
             awaitClose {}
         }.first()
         service?.privilegedService?.deletePath(path)
+    }
+
+    override suspend fun doFinishWork(
+        config: ConfigEntity,
+        entities: List<InstallEntity>,
+        extra: InstallExtraEntity
+    ) {
+        super.doFinishWork(config, entities, extra)
+        connection?.let { Shizuku.unbindUserService(userServiceArgs, it, false) }
     }
 }
