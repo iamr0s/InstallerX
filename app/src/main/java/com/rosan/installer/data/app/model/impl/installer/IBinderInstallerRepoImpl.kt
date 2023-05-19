@@ -1,12 +1,21 @@
 package com.rosan.installer.data.app.model.impl.installer
 
-import android.content.*
+import android.content.Context
+import android.content.IIntentReceiver
+import android.content.IIntentSender
+import android.content.Intent
+import android.content.IntentSender
 import android.content.pm.IPackageInstaller
 import android.content.pm.IPackageInstallerSession
 import android.content.pm.IPackageManager
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageInstaller.Session
-import android.os.*
+import android.os.Build
+import android.os.Bundle
+import android.os.IBinder
+import android.os.IInterface
+import android.os.Parcel
+import android.os.ServiceManager
 import com.rosan.dhizuku.shared.DhizukuVariables
 import com.rosan.installer.data.app.model.entity.DataEntity
 import com.rosan.installer.data.app.model.entity.InstallEntity
@@ -17,10 +26,12 @@ import com.rosan.installer.data.app.util.PackageInstallerUtil.Companion.installF
 import com.rosan.installer.data.app.util.PackageManagerUtil
 import com.rosan.installer.data.reflect.repo.ReflectRepo
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import okhttp3.internal.closeQuietly
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
-import java.io.File
 import java.lang.reflect.Field
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
@@ -54,8 +65,8 @@ abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
             IPackageInstaller.Stub.asInterface(iBinderWrapper(iPackageManager.packageInstaller.asBinder()))
 
         var installerPackageName = config.installer
-        if (config.authorizer == ConfigEntity.Authorizer.Dhizuku)
-            installerPackageName = DhizukuVariables.PACKAGE_NAME
+        if (config.authorizer == ConfigEntity.Authorizer.Dhizuku) installerPackageName =
+            DhizukuVariables.PACKAGE_NAME
 
         return (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             reflect.getDeclaredConstructor(
@@ -105,7 +116,9 @@ abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
         entities.groupBy { it.packageName }.forEach { (packageName, entities) ->
             doInnerWork(config, entities, extra, packageName)
         }
-        doFinishWork(config, entities, extra)
+        CoroutineScope(Dispatchers.IO).launch {
+            doFinishWork(config, entities, extra)
+        }
     }
 
     private suspend fun doInnerWork(
@@ -190,7 +203,9 @@ abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
         PackageManagerUtil.installResultVerify(result)
     }
 
-    private suspend fun doFinishWork(
+    abstract suspend fun doDeleteWork(path: String)
+
+    open suspend fun doFinishWork(
         config: ConfigEntity, entities: List<InstallEntity>, extra: InstallExtraEntity
     ) {
         if (!config.autoDelete) return
@@ -200,7 +215,7 @@ abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
                 is DataEntity.ZipFileEntity -> data.path
                 else -> null
             }
-            if (path != null) File(path).delete()
+            if (path != null) doDeleteWork(path)
         }
     }
 
@@ -257,10 +272,12 @@ abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
                         )
                         true
                     }
+
                     0x5F4E5446 -> {
                         reply?.writeString(descriptor)
                         true
                     }
+
                     else -> return super.onTransact(code, data, reply, flags)
                 }
             }

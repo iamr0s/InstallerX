@@ -1,5 +1,6 @@
 package com.rosan.installer.ui.page.installer.dialog.inner
 
+import android.content.Context
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.rosan.installer.R
 import com.rosan.installer.data.app.model.entity.AppEntity
@@ -23,6 +25,7 @@ import com.rosan.installer.data.app.util.InstalledAppInfo
 import com.rosan.installer.data.app.util.sortedBest
 import com.rosan.installer.data.installer.repo.InstallerRepo
 import com.rosan.installer.ui.page.installer.dialog.*
+import org.koin.compose.getKoin
 
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -30,6 +33,7 @@ import com.rosan.installer.ui.page.installer.dialog.*
 fun InstallInfoDialog(
     installer: InstallerRepo, viewModel: DialogViewModel, onTitleExtraClick: () -> Unit = {}
 ): DialogParams {
+    val context: Context = getKoin().get()
     val entities = installer.entities.filter { it.selected }.map { it.app }.sortedBest()
     val entity = entities.first()
     val installed = InstalledAppInfo.buildByPackageName(entity.packageName)
@@ -39,8 +43,11 @@ fun InstallInfoDialog(
         Image(
             modifier = Modifier.size(64.dp),
             painter = rememberDrawablePainter(
-                if (entity is AppEntity.BaseEntity) entity.icon
-                else installed?.icon
+                (if (entity is AppEntity.BaseEntity) entity.icon
+                else installed?.icon) ?: ContextCompat.getDrawable(
+                    context,
+                    android.R.drawable.sym_def_app_icon
+                )
             ), contentDescription = null
         )
     }, title = DialogInnerParams(

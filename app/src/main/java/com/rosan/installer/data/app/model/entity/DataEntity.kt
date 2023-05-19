@@ -32,7 +32,7 @@ sealed class DataEntity(open var source: DataEntity? = null) {
             it.getInputStream(entry)
         }
 
-        override fun toString() = "$path:$name"
+        override fun toString() = "$path!$name"
     }
 
     @Serializable

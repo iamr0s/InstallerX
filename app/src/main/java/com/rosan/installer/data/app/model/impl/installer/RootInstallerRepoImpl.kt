@@ -9,26 +9,14 @@ import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-object RootInstallerRepoImpl : IBinderInstallerRepoImpl(), KoinComponent {
+object RootInstallerRepoImpl : AppProcessInstallerRepoImpl(), KoinComponent {
     private val context by inject<Context>()
 
-    private lateinit var process: AppProcess
-
-    override suspend fun doWork(
+    override fun createAppProcess(
         config: ConfigEntity,
         entities: List<InstallEntity>,
         extra: InstallExtraEntity
-    ) {
-        process = AppProcess.Root()
-        process.init(context.packageName)
-        try {
-            super.doWork(config, entities, extra)
-        } finally {
-            process.close()
-        }
-    }
-
-    override suspend fun iBinderWrapper(iBinder: IBinder): IBinder {
-        return process.binderWrapper(iBinder)
+    ): AppProcess = AppProcess.Root().apply {
+        init(context.packageName)
     }
 }

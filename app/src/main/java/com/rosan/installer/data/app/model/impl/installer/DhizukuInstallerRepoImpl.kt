@@ -7,6 +7,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
 import org.koin.core.component.KoinComponent
+import java.io.File
 
 object DhizukuInstallerRepoImpl : IBinderInstallerRepoImpl(), KoinComponent {
     override suspend fun iBinderWrapper(iBinder: IBinder): IBinder {
@@ -27,5 +28,10 @@ object DhizukuInstallerRepoImpl : IBinderInstallerRepoImpl(), KoinComponent {
                 awaitClose {}
             }
         }.first()
+    }
+
+    override suspend fun doDeleteWork(path: String) {
+        val file = File(path)
+        if (file.exists() && file.canWrite()) file.delete()
     }
 }
