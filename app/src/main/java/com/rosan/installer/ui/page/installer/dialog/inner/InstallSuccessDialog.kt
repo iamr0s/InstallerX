@@ -37,9 +37,9 @@ fun InstallSuccessDialog(
             context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             viewModel.dispatch(DialogViewAction.Close)
         })
-        list.addAll(DialogButton(stringResource(R.string.previous)) {
+        list.addAll(DialogButton(stringResource(R.string.previous), 2f) {
             viewModel.dispatch(DialogViewAction.InstallPrepare)
-        }, DialogButton(stringResource(R.string.finish)) {
+        }, DialogButton(stringResource(R.string.finish), 1f) {
             viewModel.dispatch(DialogViewAction.Close)
         })
         return@DialogButtons list

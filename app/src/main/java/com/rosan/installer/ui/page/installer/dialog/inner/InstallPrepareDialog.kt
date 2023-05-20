@@ -172,9 +172,9 @@ fun InstallPrepareDialog(
     ) {
         listOf(DialogButton(stringResource(R.string.install)) {
             viewModel.dispatch(DialogViewAction.Install)
-        }, DialogButton(stringResource(R.string.previous)) {
+        }, DialogButton(stringResource(R.string.previous), 2f) {
             viewModel.dispatch(DialogViewAction.InstallChoice)
-        }, DialogButton(stringResource(R.string.cancel)) {
+        }, DialogButton(stringResource(R.string.cancel), 1f) {
             viewModel.dispatch(DialogViewAction.Close)
         })
     })

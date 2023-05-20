@@ -46,9 +46,9 @@ fun HomePage(navController: NavController) {
             item {
                 StatusWidget()
             }
-            item {
-                InfoWidget()
-            }
+//            item {
+//                InfoWidget()
+//            }
             item {
                 DonateWidget()
             }

@@ -71,13 +71,14 @@ fun InstallInfoDialog(
                     .align(Alignment.CenterEnd)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer)
-                    .size(24.dp)
-                    .padding(4.dp), colors = IconButtonDefaults.iconButtonColors(
+                    .size(24.dp), colors = IconButtonDefaults.iconButtonColors(
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ), onClick = onTitleExtraClick
             ) {
                 Icon(
-                    imageVector = Icons.TwoTone.AutoFixHigh, contentDescription = null
+                    imageVector = Icons.TwoTone.AutoFixHigh, contentDescription = null,
+                    modifier = Modifier
+                        .padding(4.dp)
                 )
             }
         }

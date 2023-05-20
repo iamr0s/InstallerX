@@ -2,5 +2,6 @@ package com.rosan.installer.ui.page.installer.dialog.inner
 
 data class DialogButton(
     val text: String,
-    val onClick: () -> Unit
+    val weight: Float = 1f,
+    val onClick: () -> Unit,
 )
