@@ -8,33 +8,41 @@ import com.rosan.installer.IPrivilegedService
 import com.rosan.installer.data.app.model.entity.InstallEntity
 import com.rosan.installer.data.app.model.entity.InstallExtraEntity
 import com.rosan.installer.data.app.model.impl.privileged.PrivilegedServiceImpl
+import com.rosan.installer.data.recycle.model.impl.AppProcessRecyclers
+import com.rosan.installer.data.recycle.repo.Recyclable
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-abstract class AppProcessInstallerRepoImpl : IBinderInstallerRepoImpl(), KoinComponent {
+abstract class AppProcessInstallerRepoImpl : IBinderInstallerRepoImpl(),
+    KoinComponent {
     private val context by inject<Context>()
 
-    private lateinit var process: AppProcess
+    private lateinit var recycler: Recyclable<AppProcess>
 
     private var privileged: IPrivilegedService? = null
 
-    abstract fun createAppProcess(
-        config: ConfigEntity, entities: List<InstallEntity>, extra: InstallExtraEntity
-    ): AppProcess
+    abstract fun getShell(
+        config: ConfigEntity,
+        entities: List<InstallEntity>,
+        extra: InstallExtraEntity
+    ): String
 
     override suspend fun doWork(
-        config: ConfigEntity, entities: List<InstallEntity>, extra: InstallExtraEntity
+        config: ConfigEntity,
+        entities: List<InstallEntity>,
+        extra: InstallExtraEntity
     ) {
-        process = createAppProcess(config, entities, extra)
+        recycler = AppProcessRecyclers.get(getShell(config, entities, extra)).make()
         super.doWork(config, entities, extra)
     }
 
-    override suspend fun iBinderWrapper(iBinder: IBinder): IBinder = process.binderWrapper(iBinder)
+    override suspend fun iBinderWrapper(iBinder: IBinder): IBinder =
+        recycler.entity.binderWrapper(iBinder)
 
     override suspend fun doDeleteWork(path: String) {
         if (privileged == null) privileged = IPrivilegedService.Stub.asInterface(
-            process.startProcess(
+            recycler.entity.startProcess(
                 ComponentName(
                     context,
                     PrivilegedServiceImpl::class.java
@@ -45,9 +53,11 @@ abstract class AppProcessInstallerRepoImpl : IBinderInstallerRepoImpl(), KoinCom
     }
 
     override suspend fun doFinishWork(
-        config: ConfigEntity, entities: List<InstallEntity>, extra: InstallExtraEntity
+        config: ConfigEntity,
+        entities: List<InstallEntity>,
+        extra: InstallExtraEntity
     ) {
         super.doFinishWork(config, entities, extra)
-        process.close()
+        recycler.recycle()
     }
 }
