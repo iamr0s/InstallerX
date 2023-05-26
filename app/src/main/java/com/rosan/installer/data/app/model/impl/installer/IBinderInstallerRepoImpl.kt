@@ -17,7 +17,6 @@ import android.os.IInterface
 import android.os.Parcel
 import android.os.ServiceManager
 import com.rosan.dhizuku.shared.DhizukuVariables
-import com.rosan.installer.data.app.model.entity.DataEntity
 import com.rosan.installer.data.app.model.entity.InstallEntity
 import com.rosan.installer.data.app.model.entity.InstallExtraEntity
 import com.rosan.installer.data.app.repo.InstallerRepo
@@ -37,6 +36,8 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 
 abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
+    protected val coroutineScope = CoroutineScope(Dispatchers.IO)
+
     protected val reflect = get<ReflectRepo>()
 
     protected abstract suspend fun iBinderWrapper(iBinder: IBinder): IBinder
@@ -113,11 +114,14 @@ abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
     override suspend fun doWork(
         config: ConfigEntity, entities: List<InstallEntity>, extra: InstallExtraEntity
     ) {
-        entities.groupBy { it.packageName }.forEach { (packageName, entities) ->
-            doInnerWork(config, entities, extra, packageName)
+        val result = kotlin.runCatching {
+            entities.groupBy { it.packageName }.forEach { (packageName, entities) ->
+                doInnerWork(config, entities, extra, packageName)
+            }
         }
-        CoroutineScope(Dispatchers.IO).launch {
-            doFinishWork(config, entities, extra)
+        doFinishWork(config, entities, extra, result)
+        result.onFailure {
+            throw it
         }
     }
 
@@ -203,21 +207,26 @@ abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
         PackageManagerUtil.installResultVerify(result)
     }
 
-    abstract suspend fun doDeleteWork(path: String)
-
     open suspend fun doFinishWork(
-        config: ConfigEntity, entities: List<InstallEntity>, extra: InstallExtraEntity
+        config: ConfigEntity,
+        entities: List<InstallEntity>,
+        extra: InstallExtraEntity,
+        result: Result<Unit>
     ) {
-        if (!config.autoDelete) return
-        entities.forEach {
-            val path = when (val data = it.data.getSourceTop()) {
-                is DataEntity.FileEntity -> data.path
-                is DataEntity.ZipFileEntity -> data.path
-                else -> null
+
+        if (result.isSuccess && config.autoDelete) {
+            coroutineScope.launch {
+                kotlin.runCatching { onDeleteWork(config, entities, extra) }.exceptionOrNull()
+                    ?.printStackTrace()
             }
-            if (path != null) doDeleteWork(path)
         }
     }
+
+    abstract suspend fun onDeleteWork(
+        config: ConfigEntity,
+        entities: List<InstallEntity>,
+        extra: InstallExtraEntity
+    )
 
     class LocalIntentReceiver : KoinComponent {
         private val reflect = get<ReflectRepo>()

@@ -16,9 +16,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import com.rosan.installer.BuildConfig
 import com.rosan.installer.R
-import com.rosan.installer.data.app.model.impl.ds.AuthorizerDSRepoImpl
+import com.rosan.installer.data.app.model.impl.DSRepoImpl
 import com.rosan.installer.data.settings.util.ConfigUtil
-import com.rosan.installer.ui.activity.InstallerActivity
 import com.rosan.installer.ui.widget.setting.BaseWidget
 import com.rosan.installer.ui.widget.setting.LabelWidget
 import kotlinx.coroutines.Dispatchers
@@ -82,13 +81,12 @@ fun LockDefaultInstaller() {
             inProgress = true
             scope.launch(Dispatchers.IO) {
                 val error = kotlin.runCatching {
-                    AuthorizerDSRepoImpl().doWork(
+                    DSRepoImpl.doWork(
                         ConfigUtil.getByPackageName(BuildConfig.APPLICATION_ID),
-                        BuildConfig.APPLICATION_ID,
-                        InstallerActivity::class.java.name,
                         true
                     )
                 }.exceptionOrNull()
+                error?.printStackTrace()
                 inProgress = false
             }
         }
@@ -111,13 +109,12 @@ fun UnlockDefaultInstaller() {
             inProgress = true
             scope.launch(Dispatchers.IO) {
                 val error = kotlin.runCatching {
-                    AuthorizerDSRepoImpl().doWork(
+                    DSRepoImpl.doWork(
                         ConfigUtil.getByPackageName(BuildConfig.APPLICATION_ID),
-                        BuildConfig.APPLICATION_ID,
-                        InstallerActivity::class.java.name,
                         false
                     )
                 }.exceptionOrNull()
+                error?.printStackTrace()
                 inProgress = false
             }
         }

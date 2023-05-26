@@ -16,7 +16,7 @@ import com.rosan.installer.data.app.model.entity.*
 import com.rosan.installer.data.app.model.impl.AnalyserRepoImpl
 import com.rosan.installer.data.installer.model.entity.ProgressEntity
 import com.rosan.installer.data.installer.model.entity.SelectInstallEntity
-import com.rosan.installer.data.installer.model.entity.error.ResolveError
+import com.rosan.installer.data.installer.model.exception.ResolveException
 import com.rosan.installer.data.installer.model.impl.InstallerRepoImpl
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
 import com.rosan.installer.data.settings.util.ConfigUtil
@@ -149,10 +149,10 @@ class ActionHandler(
     }
 
     private fun resolveDataUris(activity: Activity): List<Uri> {
-        val intent = activity.intent ?: throw ResolveError(
+        val intent = activity.intent ?: throw ResolveException(
             action = null, uris = emptyList()
         )
-        val intentAction = intent.action ?: throw ResolveError(
+        val intentAction = intent.action ?: throw ResolveException(
             action = null, uris = emptyList()
         )
 
@@ -180,7 +180,7 @@ class ActionHandler(
             }
         }
 
-        if (uris.isEmpty()) throw ResolveError(
+        if (uris.isEmpty()) throw ResolveException(
             action = intentAction, uris = uris
         )
         return uris

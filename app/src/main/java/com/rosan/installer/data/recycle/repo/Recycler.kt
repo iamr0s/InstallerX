@@ -7,17 +7,18 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okhttp3.internal.closeQuietly
 import java.io.Closeable
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 
 abstract class Recycler<T : Closeable> {
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
-    private var entity: T? = null
+    protected var entity: T? = null
 
-    private var referenceCount = 0
+    protected var referenceCount = 0
+        private set
 
     private var recycleJob: Job? = null
+
+    protected val delayDuration = 15000L
 
     fun make(): Recyclable<T> {
         synchronized(this) {
@@ -37,7 +38,7 @@ abstract class Recycler<T : Closeable> {
             if (referenceCount > 0) return
             recycleJob?.cancel()
             recycleJob = coroutineScope.launch {
-                delay(15.toDuration(DurationUnit.SECONDS))
+                delay(delayDuration)
                 if (referenceCount > 0) return@launch
                 recycleForcibly()
             }
@@ -50,5 +51,8 @@ abstract class Recycler<T : Closeable> {
             entity?.closeQuietly()
             entity = null
         }
+    }
+
+    open fun onRecycle() {
     }
 }

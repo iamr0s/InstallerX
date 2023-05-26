@@ -7,8 +7,6 @@ typealias DSRepo = DefaultSetterRepo
 interface DefaultSetterRepo {
     suspend fun doWork(
         config: ConfigEntity,
-        packageName: String,
-        className: String,
         enabled: Boolean
     )
 }

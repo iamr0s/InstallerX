@@ -66,9 +66,7 @@
 -keep public interface ** extends android.os.IInterface {*;}
 -keep public class com.rosan.installer.App {*;}
 -keep public class com.rosan.installer.ui.activity.** extends android.app.Activity
--keep public class com.rosan.installer.data.process.model.impl.** {
-    public static void main(java.lang.String[]);
-}
+
 #-keep public class com.rosan.installer.data.process.model.impl.** extends com.rosan.installer.data.process.repo.ProcessRepo {
 #public static void main(java.lang.String[]);
 #}

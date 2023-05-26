@@ -2,6 +2,8 @@ package com.rosan.installer.data.recycle.model.impl
 
 import android.content.Context
 import com.rosan.app_process.AppProcess
+import com.rosan.installer.data.recycle.model.exception.AppProcessNotWorkException
+import com.rosan.installer.data.recycle.model.exception.RootNotWorkException
 import com.rosan.installer.data.recycle.repo.Recycler
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -23,7 +25,9 @@ class AppProcessRecycler(private val shell: String) : Recycler<AppProcess>(), Ko
 
     override fun onMake(): AppProcess {
         return CustomizeAppProcess(shell).apply {
-            init(context.packageName)
+            if (init(context.packageName)) return@apply
+            if (shell == "su" || shell.startsWith("su ")) throw RootNotWorkException()
+            else throw AppProcessNotWorkException()
         }
     }
 }
