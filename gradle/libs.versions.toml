@@ -43,8 +43,7 @@ work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version
 
 # Kotlin Serialization
 # https://github.com/Kotlin/kotlinx.serialization/blob/master/README.md#setup
-# https://github.com/Kotlin/kotlinx.serialization/blob/master/formats/README.md#ProtoBuf
-ktx-serializationProtobuf = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-protobuf", version.ref = "ktx-serialization" }
+# https://github.com/Kotlin/kotlinx.serialization/blob/master/formats/README.md
 ktx-serializationJson = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "ktx-serialization" }
 
 # AndroidHiddenApiBypass

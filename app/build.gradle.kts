@@ -149,7 +149,6 @@ dependencies {
 
     implementation(libs.work.runtime.ktx)
 
-    implementation(libs.ktx.serializationProtobuf)
     implementation(libs.ktx.serializationJson)
 
     implementation(libs.lsposed.hiddenapibypass)

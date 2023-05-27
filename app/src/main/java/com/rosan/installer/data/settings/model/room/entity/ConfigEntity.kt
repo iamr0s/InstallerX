@@ -3,7 +3,6 @@ package com.rosan.installer.data.settings.model.room.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import kotlinx.serialization.Serializable
 import org.koin.core.component.KoinComponent
 
 @Entity(
@@ -11,7 +10,6 @@ import org.koin.core.component.KoinComponent
     indices = [
     ]
 )
-@Serializable
 data class ConfigEntity(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
