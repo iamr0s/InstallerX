@@ -8,13 +8,14 @@
 # https://mvnrepository.com/
 
 [versions]
-agp = "8.0.1"
-kotlin = "1.8.10"
+agp = "8.0.2"
+kotlin = "1.8.21"
+compose-compiler = "1.4.7"
 compose = "1.4.3"
 room = "2.5.1"
 ktx-serialization = "1.5.1"
 accompanist = "0.30.1"
-rikka-shizuku = "13.1.0"
+rikka-shizuku = "13.1.1"
 
 [plugins]
 agp-lib = { id = "com.android.library", version.ref = "agp" }
@@ -25,7 +26,7 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 
 [libraries]
 androidx-core = { group = "androidx.core", name = "core-ktx", version = "1.10.1" }
-androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version = "1.7.1" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version = "1.7.2" }
 androidx-lifecycle = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version = "2.6.1" }
 compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "compose" }
 compose-material = { group = "androidx.compose.material", name = "material", version.ref = "compose" }
@@ -74,7 +75,7 @@ rikka-shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", versi
 
 # Coil: An image loader for Compose
 # https://coil-kt.github.io/coil/compose/
-compose-coil = { group = "io.coil-kt", name = "coil-compose", version = "2.3.0" }
+compose-coil = { group = "io.coil-kt", name = "coil-compose", version = "2.4.0" }
 
 # XXPermissions
 # https://github.com/getActivity/XXPermissions
