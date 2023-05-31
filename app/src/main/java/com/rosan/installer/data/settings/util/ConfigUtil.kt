@@ -18,14 +18,19 @@ class ConfigUtil {
 
         private val sharedPreferences = context.getSharedPreferences("app", Context.MODE_PRIVATE)
 
+        val globalAuthorizer: ConfigEntity.Authorizer
+            get() = AuthorizerConverter.revert(sharedPreferences.getString("authorizer", null))
+
+        val globalCustomizeAuthorizer: String
+            get() = sharedPreferences.getString("customize_authorizer", null) ?: ""
+
         suspend fun getByPackageName(packageName: String? = null): ConfigEntity {
             val entity = getByPackageNameInner(packageName)
             return if (entity.authorizer != ConfigEntity.Authorizer.Global)
                 entity.copy()
             else entity.copy(
-                authorizer = AuthorizerConverter.revert(sharedPreferences.getString("authorizer", null)),
-                customizeAuthorizer =
-                sharedPreferences.getString("customize_authorizer", null) ?: ""
+                authorizer = globalAuthorizer,
+                customizeAuthorizer = globalCustomizeAuthorizer
             )
         }
 

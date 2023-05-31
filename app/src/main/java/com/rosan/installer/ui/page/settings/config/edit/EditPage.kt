@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.rosan.installer.R
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
+import com.rosan.installer.data.settings.util.ConfigUtil
 import com.rosan.installer.ui.widget.setting.DropDownMenuWidget
 import com.rosan.installer.ui.widget.setting.LabelWidget
 import com.rosan.installer.ui.widget.setting.SwitchWidget
@@ -290,7 +291,9 @@ fun DataCompatModeWidget(viewModel: EditViewModel) {
 
 @Composable
 fun DataDeclareInstallerWidget(viewModel: EditViewModel) {
-    val authorizer = viewModel.state.data.authorizer
+    var authorizer = viewModel.state.data.authorizer
+    if (authorizer == ConfigEntity.Authorizer.Global)
+        authorizer = ConfigUtil.globalAuthorizer
     val declareInstaller = viewModel.state.data.declareInstaller
     if (authorizer == ConfigEntity.Authorizer.Dhizuku) {
         viewModel.dispatch(EditViewAction.ChangeDataDeclareInstaller(false))
