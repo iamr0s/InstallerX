@@ -61,6 +61,7 @@
     <string name="config_description">描述</string>
     <string name="config_authorizer">授权器</string>
     <!--    <string name="config_authorizer_msg">用于执行解析与执行命令，请确保拥有足够的权限。</string>-->
+    <string name="config_authorizer_global">跟随全局</string>
     <string name="config_authorizer_none">无</string>
     <string name="config_authorizer_root">ROOT超级用户</string>
     <string name="config_authorizer_shizuku">Shizuku</string>

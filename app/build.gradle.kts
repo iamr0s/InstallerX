@@ -26,7 +26,7 @@ android {
         namespace = "com.rosan.installer"
         minSdk = 21
         targetSdk = 33
-        versionCode = 19
+        versionCode = 20
         versionName = "1.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

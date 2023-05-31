@@ -1,15 +1,12 @@
 package com.rosan.installer.data.recycle.model.impl
 
-import android.content.Context
 import com.rosan.app_process.AppProcess
 import com.rosan.installer.data.recycle.model.exception.AppProcessNotWorkException
 import com.rosan.installer.data.recycle.model.exception.RootNotWorkException
 import com.rosan.installer.data.recycle.repo.Recycler
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.util.StringTokenizer
 
-class AppProcessRecycler(private val shell: String) : Recycler<AppProcess>(), KoinComponent {
+class AppProcessRecycler(private val shell: String) : Recycler<AppProcess>() {
     private class CustomizeAppProcess(private val shell: String) : AppProcess.Terminal() {
         override fun newTerminal(): MutableList<String> {
             val st = StringTokenizer(shell)
@@ -21,11 +18,9 @@ class AppProcessRecycler(private val shell: String) : Recycler<AppProcess>(), Ko
         }
     }
 
-    private val context by inject<Context>()
-
     override fun onMake(): AppProcess {
         return CustomizeAppProcess(shell).apply {
-            if (init(context.packageName)) return@apply
+            if (init()) return@apply
             if (shell == "su" || shell.startsWith("su ")) throw RootNotWorkException()
             else throw AppProcessNotWorkException()
         }

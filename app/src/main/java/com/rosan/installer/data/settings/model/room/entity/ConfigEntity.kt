@@ -33,7 +33,7 @@ data class ConfigEntity(
         var default = ConfigEntity(
             name = "",
             description = "",
-            authorizer = Authorizer.Shizuku,
+            authorizer = Authorizer.Global,
             customizeAuthorizer = "",
             installMode = InstallMode.Dialog,
             analyser = Analyser.R0s,
@@ -50,6 +50,7 @@ data class ConfigEntity(
         get() = authorizer == Authorizer.Customize
 
     enum class Authorizer(val value: String) {
+        Global("global"),
         None("none"),
         Root("root"),
         Shizuku("shizuku"),

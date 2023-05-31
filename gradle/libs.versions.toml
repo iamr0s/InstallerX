@@ -87,4 +87,4 @@ iamr0s-dhizuku-api = { group = "io.github.iamr0s", name = "Dhizuku-API", version
 
 # AndroidAppProcess
 # https://github.com/iamr0s/AndroidAppProcess
-iamr0s-androidAppProcess = { group = "io.github.iamr0s", name = "AndroidAppProcess", version = "1.1" }
+iamr0s-androidAppProcess = { group = "io.github.iamr0s", name = "AndroidAppProcess", version = "1.2" }

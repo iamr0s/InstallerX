@@ -3,7 +3,7 @@ package com.rosan.installer.data.settings.model.room.entity.converter
 import androidx.room.TypeConverter
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
 
-class AnalyserConverter {
+object AnalyserConverter {
     @TypeConverter
     fun revert(value: String): ConfigEntity.Analyser =
         ConfigEntity.Analyser.values().find { it.value == value }

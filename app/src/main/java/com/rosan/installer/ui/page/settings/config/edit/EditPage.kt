@@ -36,7 +36,7 @@ import kotlin.math.absoluteValue
 fun EditPage(
     navController: NavController,
     id: Long? = null,
-    viewModel: EditViewModel = getViewModel(parameters = { parametersOf(id) })
+    viewModel: EditViewModel = getViewModel { parametersOf(id) }
 ) {
     LaunchedEffect(true) {
         viewModel.dispatch(EditViewAction.Init)
@@ -59,6 +59,7 @@ fun EditPage(
                         withDismissAction = true,
                     )
                 }
+
                 is EditViewEvent.Saved -> {
                     navController.navigateUp()
                 }
@@ -167,7 +168,6 @@ fun DataNameWidget(viewModel: EditViewModel) {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataDescriptionWidget(viewModel: EditViewModel) {
     TextField(
@@ -191,6 +191,7 @@ fun DataDescriptionWidget(viewModel: EditViewModel) {
 fun DataAuthorizerWidget(viewModel: EditViewModel) {
     val authorizer = viewModel.state.data.authorizer
     val data = mapOf(
+        ConfigEntity.Authorizer.Global to stringResource(id = R.string.config_authorizer_global),
         ConfigEntity.Authorizer.None to stringResource(id = R.string.config_authorizer_none),
         ConfigEntity.Authorizer.Root to stringResource(id = R.string.config_authorizer_root),
         ConfigEntity.Authorizer.Shizuku to stringResource(id = R.string.config_authorizer_shizuku),
@@ -210,7 +211,6 @@ fun DataAuthorizerWidget(viewModel: EditViewModel) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataCustomizeAuthorizerWidget(viewModel: EditViewModel) {
     if (!viewModel.state.data.authorizerCustomize) return
@@ -305,7 +305,6 @@ fun DataDeclareInstallerWidget(viewModel: EditViewModel) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataInstallerWidget(viewModel: EditViewModel) {
     val declareInstaller = viewModel.state.data.declareInstaller
