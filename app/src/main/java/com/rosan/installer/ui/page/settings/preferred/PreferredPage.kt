@@ -3,21 +3,26 @@ package com.rosan.installer.ui.page.settings.preferred
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.rosan.installer.BuildConfig
 import com.rosan.installer.R
 import com.rosan.installer.data.app.model.impl.DSRepoImpl
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
@@ -25,10 +30,10 @@ import com.rosan.installer.data.settings.util.ConfigUtil
 import com.rosan.installer.ui.widget.setting.BaseWidget
 import com.rosan.installer.ui.widget.setting.DropDownMenuWidget
 import com.rosan.installer.ui.widget.setting.LabelWidget
+import com.rosan.installer.util.help
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.getViewModel
-import org.koin.compose.getKoin
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,8 +70,8 @@ fun PreferredPage(
             item { DataAuthorizerWidget(viewModel) }
             item { DataCustomizeAuthorizerWidget(viewModel) }
             item { LabelWidget(label = stringResource(id = R.string.basic)) }
-            item { LockDefaultInstaller() }
-            item { UnlockDefaultInstaller() }
+            item { DefaultInstaller(snackBarHostState, true) }
+            item { DefaultInstaller(snackBarHostState, false) }
             item { ClearCache() }
             item { LabelWidget(label = stringResource(id = R.string.more)) }
             item { UserTerms() }
@@ -126,58 +131,97 @@ fun DataCustomizeAuthorizerWidget(viewModel: PreferredViewModel) {
 }
 
 @Composable
-fun LockDefaultInstaller() {
-    val scope = rememberCoroutineScope()
-    var inProgress by remember {
-        mutableStateOf(false)
-    }
-    BaseWidget(
-        icon = Icons.TwoTone.Favorite,
-        title = stringResource(id = R.string.lock_default_installer),
-        onClick = {
-
-            if (inProgress) return@BaseWidget
-            inProgress = true
-            scope.launch(Dispatchers.IO) {
-                val error = kotlin.runCatching {
-                    DSRepoImpl.doWork(
-                        ConfigUtil.getByPackageName(BuildConfig.APPLICATION_ID),
-                        true
-                    )
-                }.exceptionOrNull()
-                error?.printStackTrace()
-                inProgress = false
-            }
-        }
-    ) {}
-}
-
-@Composable
-fun UnlockDefaultInstaller() {
+fun DefaultInstaller(snackBarHostState: SnackbarHostState, lock: Boolean) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val koin = getKoin()
-    var inProgress by remember {
+    var exception: Throwable by remember {
+        mutableStateOf(Throwable())
+    }
+    var showException by remember {
         mutableStateOf(false)
     }
-    BaseWidget(
-        icon = Icons.TwoTone.FavoriteBorder,
-        title = stringResource(id = R.string.unlock_default_installer),
-        onClick = {
-            if (inProgress) return@BaseWidget
-            inProgress = true
+
+    fun workIt() {
+        synchronized(scope) {
             scope.launch(Dispatchers.IO) {
-                val error = kotlin.runCatching {
-                    DSRepoImpl.doWork(
-                        ConfigUtil.getByPackageName(BuildConfig.APPLICATION_ID),
-                        false
-                    )
+                val exceptionOrNull = kotlin.runCatching {
+                    DSRepoImpl.doWork(ConfigUtil.getByPackageName(null), lock)
                 }.exceptionOrNull()
-                error?.printStackTrace()
-                inProgress = false
+                exceptionOrNull?.printStackTrace()
+
+                snackBarHostState.currentSnackbarData?.dismiss()
+                if (exceptionOrNull == null) snackBarHostState.showSnackbar(
+                    context.getString(
+                        if (lock) R.string.lock_default_installer_success
+                        else R.string.unlock_default_installer_success
+                    )
+                )
+                else {
+                    val result = snackBarHostState.showSnackbar(
+                        context.getString(
+                            if (lock) R.string.lock_default_installer_failed
+                            else R.string.unlock_default_installer_failed
+                        ),
+                        context.getString(R.string.details),
+                        duration = SnackbarDuration.Short
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        exception = exceptionOrNull
+                        showException = true
+                    }
+                }
             }
         }
+    }
+
+    BaseWidget(
+        icon = if (lock) Icons.TwoTone.Favorite else Icons.TwoTone.FavoriteBorder,
+        title =
+        stringResource(if (lock) R.string.lock_default_installer else R.string.unlock_default_installer),
+        description =
+        stringResource(if (lock) R.string.lock_default_installer_dsp else R.string.unlock_default_installer_dsp),
+        onClick = {
+            workIt()
+        }
     ) {}
+    if (!showException) return
+    AlertDialog(onDismissRequest = {
+        showException = false
+    }, title = {
+        Text(stringResource(if (lock) R.string.lock_default_installer_failed else R.string.unlock_default_installer_failed))
+    }, text = {
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onErrorContainer) {
+            LazyColumn(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .fillMaxWidth()
+                    .padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    Text(exception.help(), fontWeight = FontWeight.Bold)
+                }
+                item {
+                    SelectionContainer {
+                        Text(exception.stackTraceToString().trim())
+                    }
+                }
+            }
+        }
+    }, confirmButton = {
+        TextButton(onClick = {
+            showException = false
+            workIt()
+        }) {
+            Text(stringResource(R.string.retry))
+        }
+    }, dismissButton = {
+        TextButton(onClick = {
+            showException = false
+        }) {
+            Text(stringResource(R.string.cancel))
+        }
+    })
 }
 
 @Composable

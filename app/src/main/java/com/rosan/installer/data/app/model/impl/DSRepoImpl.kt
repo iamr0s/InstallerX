@@ -2,7 +2,6 @@ package com.rosan.installer.data.app.model.impl
 
 import android.content.ComponentName
 import android.content.Context
-import android.util.Log
 import com.rosan.installer.data.app.repo.DSRepo
 import com.rosan.installer.data.recycle.model.impl.AppProcessPrivilegedServiceRecyclers
 import com.rosan.installer.data.recycle.model.impl.DhizukuPrivilegedServiceRecycler
@@ -26,8 +25,6 @@ object DSRepoImpl : DSRepo, KoinComponent {
                 .make()
 
             else -> AppProcessPrivilegedServiceRecyclers.get("sh").make()
-        }.apply {
-            Log.e("r0s", "doWork: ${config.authorizer}")
         }.use {
             it.entity.setDefaultInstaller(
                 ComponentName(context, InstallerActivity::class.java),

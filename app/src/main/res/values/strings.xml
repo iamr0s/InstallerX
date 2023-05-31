@@ -37,9 +37,17 @@
 
     <string name="basic">常规</string>
     <string name="lock_default_installer">锁定为默认安装器</string>
-    <string name="unlock_default_installer">清除默认安装器</string>
+    <string name="lock_default_installer_dsp">多个授权器配合效果更佳，少数系统需要配合Xposed模块</string>
+    <string name="lock_default_installer_success">锁定成功</string>
+    <string name="lock_default_installer_failed">锁定失败</string>
+    <string name="unlock_default_installer">清除锁定默认安装器</string>
+    <string name="unlock_default_installer_dsp">清除锁定时授权器应尽量与锁定时一致，否则可能无效</string>
+    <string name="unlock_default_installer_success">清除成功</string>
+    <string name="unlock_default_installer_failed">清除失败</string>
     <string name="clear_cache">清理缓存</string>
     <string name="success">成功</string>
+
+    <string name="details">详情</string>
 
     <string name="add">新增</string>
     <string name="update">更新</string>

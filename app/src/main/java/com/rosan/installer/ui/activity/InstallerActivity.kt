@@ -2,7 +2,6 @@ package com.rosan.installer.ui.activity
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
@@ -90,7 +89,6 @@ class InstallerActivity : ComponentActivity(), KoinComponent {
             }
             launch {
                 installer.background.collect {
-                    Log.e("r0s", "background $it")
                     if (it) this@InstallerActivity.finish()
                 }
             }

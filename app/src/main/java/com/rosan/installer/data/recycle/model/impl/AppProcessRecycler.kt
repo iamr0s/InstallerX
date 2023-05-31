@@ -21,7 +21,7 @@ class AppProcessRecycler(private val shell: String) : Recycler<AppProcess>() {
     override fun onMake(): AppProcess {
         return CustomizeAppProcess(shell).apply {
             if (init()) return@apply
-            if (shell == "su" || shell.startsWith("su ")) throw RootNotWorkException()
+            if (shell == "su") throw RootNotWorkException()
             else throw AppProcessNotWorkException()
         }
     }
