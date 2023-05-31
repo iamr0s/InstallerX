@@ -41,8 +41,6 @@ class EditViewModel(
                         action.customizeAuthorizer
                     )
                     is EditViewAction.ChangeDataInstallMode -> changeDataInstallMode(action.installMode)
-                    is EditViewAction.ChangeDataAnalyser -> changeDataAnalyser(action.analyser)
-                    is EditViewAction.ChangeDataCompatMode -> changeDataCompatMode(action.compatMode)
                     is EditViewAction.ChangeDataDeclareInstaller -> changeDataDeclareInstaller(
                         action.declareInstaller
                     )
@@ -111,22 +109,6 @@ class EditViewModel(
         state = state.copy(
             data = state.data.copy(
                 installMode = installMode
-            )
-        )
-    }
-
-    private fun changeDataAnalyser(analyser: ConfigEntity.Analyser) {
-        state = state.copy(
-            data = state.data.copy(
-                analyser = analyser
-            )
-        )
-    }
-
-    private fun changeDataCompatMode(compatMode: Boolean) {
-        state = state.copy(
-            data = state.data.copy(
-                compatMode = compatMode
             )
         )
     }

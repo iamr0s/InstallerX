@@ -11,8 +11,6 @@ data class EditViewState(
         val authorizer: ConfigEntity.Authorizer,
         val customizeAuthorizer: String,
         val installMode: ConfigEntity.InstallMode,
-        val analyser: ConfigEntity.Analyser,
-        val compatMode: Boolean,
         val declareInstaller: Boolean,
         val installer: String,
         val forAllUser: Boolean,
@@ -37,8 +35,6 @@ data class EditViewState(
             else
                 "",
             installMode = this.installMode,
-            analyser = this.analyser,
-            compatMode = this.compatMode,
             installer = if (this.declareInstaller)
                 this.installer
             else
@@ -56,8 +52,6 @@ data class EditViewState(
                 authorizer = config.authorizer,
                 customizeAuthorizer = config.customizeAuthorizer,
                 installMode = config.installMode,
-                analyser = config.analyser,
-                compatMode = config.compatMode,
                 declareInstaller = config.installer != null,
                 installer = config.installer ?: "",
                 forAllUser = config.forAllUser,

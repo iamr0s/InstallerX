@@ -125,8 +125,6 @@ fun EditPage(
             item { DataAuthorizerWidget(viewModel = viewModel) }
             item { DataCustomizeAuthorizerWidget(viewModel = viewModel) }
             item { DataInstallModeWidget(viewModel = viewModel) }
-//            item { DataAnalyserWidget(viewModel = viewModel) }
-//            item { DataCompatModeWidget(viewModel = viewModel) }
             item { DataDeclareInstallerWidget(viewModel = viewModel) }
             item { DataInstallerWidget(viewModel = viewModel) }
             item { DataForAllUserWidget(viewModel = viewModel) }
@@ -254,38 +252,6 @@ fun DataInstallModeWidget(viewModel: EditViewModel) {
         data.keys.toList().getOrNull(it)?.let {
             viewModel.dispatch(EditViewAction.ChangeDataInstallMode(it))
         }
-    }
-}
-
-@Composable
-fun DataAnalyserWidget(viewModel: EditViewModel) {
-    val analyser = viewModel.state.data.analyser
-    val data = mapOf(
-        ConfigEntity.Analyser.R0s to stringResource(id = R.string.config_analyser_r0s),
-        ConfigEntity.Analyser.System to stringResource(id = R.string.config_analyser_system),
-    )
-    DropDownMenuWidget(
-        icon = Icons.TwoTone.AltRoute,
-        title = stringResource(id = R.string.config_analyser),
-        description = if (data.containsKey(analyser)) data[analyser] else null,
-        choice = data.keys.toList().indexOf(analyser),
-        data = data.values.toList(),
-    ) {
-        data.keys.toList().getOrNull(it)?.let {
-            viewModel.dispatch(EditViewAction.ChangeDataAnalyser(it))
-        }
-    }
-}
-
-@Composable
-fun DataCompatModeWidget(viewModel: EditViewModel) {
-    SwitchWidget(
-        icon = Icons.TwoTone.BuildCircle,
-        title = stringResource(id = R.string.config_compat_mode),
-        description = stringResource(id = R.string.config_compat_mode_dsp),
-        checked = viewModel.state.data.compatMode
-    ) {
-        viewModel.dispatch(EditViewAction.ChangeDataCompatMode(it))
     }
 }
 

@@ -82,12 +82,6 @@
     <string name="config_install_mode_notification">通知栏</string>
     <string name="config_install_mode_auto_notification">通知栏自动</string>
     <string name="config_install_mode_ignore">忽略</string>
-    <string name="config_analyser">解析器</string>
-    <string name="config_analyser_r0s">r0s解析器</string>
-    <string name="config_analyser_system_r">系统解析器（Android R+）</string>
-    <string name="config_analyser_system">系统解析器</string>
-    <string name="config_compat_mode">兼容模式</string>
-    <string name="config_compat_mode_dsp">如遇到分析、解析失败时打开</string>
     <string name="config_declare_installer">声明安装者（安装来源）</string>
     <string name="config_installer">安装者（包名）</string>
     <string name="config_for_all_user">多用户安装</string>
