@@ -11,14 +11,12 @@ import android.net.Uri
 import android.os.Build
 import android.os.Process
 import android.os.ServiceManager
-import com.rosan.installer.IPrivilegedService
 import com.rosan.installer.data.recycle.util.InstallIntentFilter
 import com.rosan.installer.data.recycle.util.delete
 import com.rosan.installer.data.reflect.repo.ReflectRepo
-import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class DefaultPrivilegedService : IPrivilegedService.Stub(), KoinComponent {
+class DefaultPrivilegedService : BasePrivilegedService() {
     private val reflect by inject<ReflectRepo>()
 
     override fun delete(paths: Array<out String>) = paths.delete()

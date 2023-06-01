@@ -4,13 +4,10 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import com.rosan.dhizuku.shared.DhizukuVariables
-import com.rosan.installer.IPrivilegedService
 import com.rosan.installer.data.recycle.util.InstallIntentFilter
 import com.rosan.installer.data.recycle.util.delete
-import org.koin.core.component.KoinComponent
 
-class DhizukuPrivilegedService(private val context: Context) : IPrivilegedService.Stub(),
-    KoinComponent {
+class DhizukuPrivilegedService : BasePrivilegedService() {
     private val devicePolicyManager: DevicePolicyManager =
         context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
 

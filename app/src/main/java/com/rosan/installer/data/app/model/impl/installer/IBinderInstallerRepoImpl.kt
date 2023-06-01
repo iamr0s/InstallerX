@@ -23,6 +23,8 @@ import com.rosan.installer.data.app.repo.InstallerRepo
 import com.rosan.installer.data.app.util.InstallFlag
 import com.rosan.installer.data.app.util.PackageInstallerUtil.Companion.installFlags
 import com.rosan.installer.data.app.util.PackageManagerUtil
+import com.rosan.installer.data.app.util.sourcePath
+import com.rosan.installer.data.recycle.util.useUserService
 import com.rosan.installer.data.reflect.repo.ReflectRepo
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
 import kotlinx.coroutines.CoroutineScope
@@ -222,11 +224,15 @@ abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
         }
     }
 
-    abstract suspend fun onDeleteWork(
+    protected open suspend fun onDeleteWork(
         config: ConfigEntity,
         entities: List<InstallEntity>,
         extra: InstallExtraEntity
-    )
+    ) {
+        useUserService(config) {
+            it.privileged.delete(entities.sourcePath())
+        }
+    }
 
     class LocalIntentReceiver : KoinComponent {
         private val reflect = get<ReflectRepo>()
