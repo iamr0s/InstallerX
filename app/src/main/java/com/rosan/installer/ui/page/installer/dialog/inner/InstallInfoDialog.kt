@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.ArrowRight
 import androidx.compose.material.icons.twotone.AutoFixHigh
@@ -41,7 +42,9 @@ fun InstallInfoDialog(
         DialogParamsType.InstallerInfo.id
     ) {
         Image(
-            modifier = Modifier.size(64.dp),
+            modifier = Modifier
+                .size(64.dp)
+                .clip(RoundedCornerShape(12.dp)),
             painter = rememberDrawablePainter(
                 (if (entity is AppEntity.BaseEntity) entity.icon
                 else installed?.icon) ?: ContextCompat.getDrawable(
