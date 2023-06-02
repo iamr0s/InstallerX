@@ -1,15 +1,18 @@
 package com.rosan.installer.data.recycle.util
 
 import android.content.pm.PackageManager
+import com.rosan.installer.BuildConfig
 import com.rosan.installer.data.recycle.model.exception.ShizukuNotWorkException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import rikka.shizuku.Shizuku
+import rikka.sui.Sui
 
 suspend fun <T> requireShizukuPermissionGranted(action: suspend () -> T): T {
     callbackFlow {
+        Sui.init(BuildConfig.APPLICATION_ID)
         if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
             send(Unit)
             awaitClose()

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.first
 
 suspend fun <T> requireDhizukuPermissionGranted(action: suspend () -> T): T {
     callbackFlow {
+        Dhizuku.init()
         if (Dhizuku.isPermissionGranted()) send(Unit)
         else {
             Dhizuku.requestPermission(object : DhizukuRequestPermissionListener() {
