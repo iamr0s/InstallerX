@@ -9,19 +9,18 @@ import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.graphics.drawable.toBitmapOrNull
-import androidx.work.ForegroundInfo
 import com.rosan.installer.R
 import com.rosan.installer.data.app.util.getInfo
 import com.rosan.installer.data.installer.model.entity.ProgressEntity
-import com.rosan.installer.data.installer.model.impl.InstallerRepoImpl
+import com.rosan.installer.data.installer.repo.InstallerRepo
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class ForegroundInfoHandler(
-    worker: InstallerRepoImpl.MyWorker
-) : Handler(worker), KoinComponent {
+class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerRepo) :
+    Handler(scope, installer), KoinComponent {
     companion object {
         private const val InstallerChannel = "installer_channel"
 
@@ -36,7 +35,7 @@ class ForegroundInfoHandler(
 
     private val context by inject<Context>()
 
-    private val notificationId = worker.impl.id.hashCode() and Int.MAX_VALUE
+    private val notificationId = installer.id.hashCode() and Int.MAX_VALUE
 
     @RequiresApi(Build.VERSION_CODES.O)
     private val notificationChannel: NotificationChannelCompat = NotificationChannelCompat
@@ -51,12 +50,11 @@ class ForegroundInfoHandler(
         .build()
 
     override suspend fun onStart() {
-        job = worker.scope.launch {
-            setForeground()
+        job = scope.launch {
             var enabled = false
             var notification: Notification? = null
             launch {
-                worker.impl.progress.collect {
+                installer.progress.collect {
                     notification = when (it) {
                         is ProgressEntity.Ready -> onReady()
                         is ProgressEntity.Resolving -> onResolving()
@@ -71,12 +69,11 @@ class ForegroundInfoHandler(
                         is ProgressEntity.Finish -> null
                         else -> onReady()
                     }
-                    setNotification(notification)
                     setNotification(if (enabled) notification else null)
                 }
             }
             launch {
-                worker.impl.background.collect {
+                installer.background.collect {
                     enabled = it
                     setNotification(if (enabled) notification else null)
                 }
@@ -103,34 +100,20 @@ class ForegroundInfoHandler(
         manager.notify(notificationId, notification)
     }
 
-    private fun setForeground() {
-        val manager = NotificationManagerCompat.from(context)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) manager.createNotificationChannel(
-            notificationBackgroundChannel
-        )
-        val notification = NotificationCompat.Builder(context, InstallerBackgroundChannel)
-            .setSmallIcon(WorkingIcon)
-            .setContentTitle(getString(R.string.installer_running))
-            .build()
-        worker.setForegroundAsync(
-            ForegroundInfo(1, notification)
-        )
-    }
-
     private val openIntent =
-        BroadcastHandler.openPendingIntent(context, worker)
+        BroadcastHandler.openPendingIntent(context, installer)
 
     private val analyseIntent =
-        BroadcastHandler.analysePendingIntent(context, worker)
+        BroadcastHandler.analysePendingIntent(context, installer)
 
     private val installIntent =
-        BroadcastHandler.installPendingIntent(context, worker)
+        BroadcastHandler.installPendingIntent(context, installer)
 
     private val finishIntent =
-        BroadcastHandler.finishPendingIntent(context, worker)
+        BroadcastHandler.finishPendingIntent(context, installer)
 
     private val launchIntent =
-        BroadcastHandler.launchPendingIntent(context, worker)
+        BroadcastHandler.launchPendingIntent(context, installer)
 
     private fun onReady(): Notification {
         return NotificationCompat.Builder(context, InstallerChannel)
@@ -194,7 +177,7 @@ class ForegroundInfoHandler(
     }
 
     private fun onAnalysedSuccess(): Notification {
-        return if (worker.impl.entities.count { it.selected } != 1)
+        return if (installer.entities.count { it.selected } != 1)
             NotificationCompat.Builder(context, InstallerChannel)
                 .setContentIntent(openIntent)
                 .setSmallIcon(WorkingIcon)
@@ -203,7 +186,7 @@ class ForegroundInfoHandler(
                 .setDeleteIntent(finishIntent)
                 .build()
         else {
-            val info = worker.impl.entities.filter { it.selected }.map { it.app }.getInfo(context)
+            val info = installer.entities.filter { it.selected }.map { it.app }.getInfo(context)
             NotificationCompat.Builder(context, InstallerChannel)
                 .setContentIntent(openIntent)
                 .setSmallIcon(WorkingIcon)
@@ -218,7 +201,7 @@ class ForegroundInfoHandler(
     }
 
     private fun onInstalling(): Notification {
-        val info = worker.impl.entities.filter { it.selected }.map { it.app }.getInfo(context)
+        val info = installer.entities.filter { it.selected }.map { it.app }.getInfo(context)
         return NotificationCompat.Builder(context, InstallerChannel)
             .setContentIntent(openIntent)
             .setSmallIcon(WorkingIcon)
@@ -231,7 +214,7 @@ class ForegroundInfoHandler(
     }
 
     private fun onInstallFailed(): Notification {
-        val info = worker.impl.entities.filter { it.selected }.map { it.app }.getInfo(context)
+        val info = installer.entities.filter { it.selected }.map { it.app }.getInfo(context)
         return NotificationCompat.Builder(context, InstallerChannel)
             .setContentIntent(openIntent)
             .setSmallIcon(PausingIcon)
@@ -245,7 +228,7 @@ class ForegroundInfoHandler(
     }
 
     private fun onInstallSuccess(): Notification {
-        val entities = worker.impl.entities.filter { it.selected }.map { it.app }
+        val entities = installer.entities.filter { it.selected }.map { it.app }
         val info = entities.getInfo(context)
         val intent = context.packageManager.getLaunchIntentForPackage(entities.first().packageName)
         return NotificationCompat.Builder(context, InstallerChannel)

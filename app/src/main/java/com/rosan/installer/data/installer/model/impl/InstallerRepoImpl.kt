@@ -1,31 +1,29 @@
 package com.rosan.installer.data.installer.model.impl
 
 import android.app.Activity
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.work.*
 import com.rosan.installer.data.app.model.entity.DataEntity
 import com.rosan.installer.data.installer.model.entity.ProgressEntity
 import com.rosan.installer.data.installer.model.entity.SelectInstallEntity
-import com.rosan.installer.data.installer.model.impl.installer.ActionHandler
-import com.rosan.installer.data.installer.model.impl.installer.BroadcastHandler
-import com.rosan.installer.data.installer.model.impl.installer.ForegroundInfoHandler
-import com.rosan.installer.data.installer.model.impl.installer.ProgressHandler
 import com.rosan.installer.data.installer.repo.InstallerRepo
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
-import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.get
-import java.util.*
+import org.koin.core.component.inject
+import java.util.UUID
 import kotlin.collections.set
 
 class InstallerRepoImpl private constructor() : InstallerRepo, KoinComponent {
     companion object : KoinComponent {
         private val impls = mutableMapOf<String, InstallerRepoImpl>()
+
+        private val context by inject<Context>()
 
         fun getOrCreate(id: String? = null): InstallerRepo {
             if (id == null) return create()
@@ -37,22 +35,21 @@ class InstallerRepoImpl private constructor() : InstallerRepo, KoinComponent {
         }
 
         fun create(): InstallerRepo {
-            val impl = InstallerRepoImpl()
-            impls[impl.id] = impl
-            val manager: WorkManager = get()
-            val data = workDataOf(
-                "installer_id" to impl.id
-            )
-            val request = OneTimeWorkRequestBuilder<MyWorker>()
-                .setInputData(data)
-                .build()
-            manager.beginUniqueWork(impl.id, ExistingWorkPolicy.KEEP, request)
-                .enqueue()
-            return impl
+            synchronized(this) {
+                val impl = InstallerRepoImpl()
+                impls[impl.id] = impl
+                val intent = Intent(InstallerService.Action.Ready.value)
+                intent.component = ComponentName(context, InstallerService::class.java)
+                intent.putExtra(InstallerService.EXTRA_ID, impl.id)
+                context.startService(intent)
+                return impl
+            }
         }
 
         fun remove(id: String) {
-            impls.remove(id)
+            synchronized(this) {
+                impls.remove(id)
+            }
         }
     }
 
@@ -75,14 +72,6 @@ class InstallerRepoImpl private constructor() : InstallerRepo, KoinComponent {
     override val background: MutableSharedFlow<Boolean> =
         MutableStateFlow(false)
 
-    private val isWorking: Boolean = runBlocking {
-        val manager: WorkManager = get()
-        manager.getWorkInfosForUniqueWork(id).await().forEach {
-            if (!it.state.isFinished) return@runBlocking true
-        }
-        false
-    }
-
     override fun resolve(activity: Activity) {
         action.tryEmit(Action.Resolve(activity))
     }
@@ -100,12 +89,7 @@ class InstallerRepoImpl private constructor() : InstallerRepo, KoinComponent {
     }
 
     override fun close() {
-        if (isWorking) {
-            action.tryEmit(Action.Finish)
-        } else {
-            progress.tryEmit(ProgressEntity.Finish)
-        }
-        remove(id)
+        action.tryEmit(Action.Finish)
     }
 
     sealed class Action {
@@ -116,60 +100,5 @@ class InstallerRepoImpl private constructor() : InstallerRepo, KoinComponent {
         object Install : Action()
 
         object Finish : Action()
-    }
-
-    class MyWorker(context: Context, workerParams: WorkerParameters) :
-        CoroutineWorker(context, workerParams), KoinComponent {
-        private var _impl: InstallerRepoImpl? = null
-
-        var impl: InstallerRepoImpl
-            get() = _impl!!
-            set(value) {
-                _impl = value
-            }
-
-        lateinit var scope: CoroutineScope
-
-        override suspend fun doWork(): Result {
-            val exception = kotlin.runCatching {
-                doInnerWork()
-                _impl?.progress?.tryEmit(ProgressEntity.Finish)
-            }.exceptionOrNull()
-            exception ?: return Result.success()
-            if (exception is CancellationException) return Result.success()
-            // 异常结束
-            impl.error = exception
-            impl.progress.tryEmit(ProgressEntity.Error)
-            return Result.failure()
-            // 意外退出，重新开启
-            // doWork()
-        }
-
-        private suspend fun doInnerWork() = withContext(Dispatchers.IO) {
-            scope = this
-            val installerId =
-                inputData.getString("installer_id") ?: return@withContext Result.failure()
-            impl = impls[installerId] ?: return@withContext Result.failure()
-            val handlers = listOf(
-                ActionHandler(this@MyWorker),
-                ProgressHandler(this@MyWorker),
-                ForegroundInfoHandler(this@MyWorker),
-                BroadcastHandler(this@MyWorker)
-            )
-            handlers.forEach {
-                it.onStart()
-            }
-            var onFinishJob: Job? = null
-            onFinishJob = launch {
-                impl.progress.collect {
-                    if (it is ProgressEntity.Finish) {
-                        handlers.forEach {
-                            it.onFinish()
-                        }
-                        onFinishJob?.cancel()
-                    }
-                }
-            }
-        }
     }
 }

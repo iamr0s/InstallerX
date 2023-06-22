@@ -75,6 +75,8 @@
             </intent-filter>
         </activity>
 
+        <service android:name="com.rosan.installer.data.installer.model.impl.InstallerService" />
+
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"
