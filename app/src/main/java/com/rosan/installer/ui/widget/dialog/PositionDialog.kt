@@ -63,18 +63,18 @@ fun PositionDialog(
     rightButton: @Composable (() -> Unit)? = null
 ) {
     Dialog(onDismissRequest = onDismissRequest, properties = properties) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(null) {
+                detectTapGestures(onTap = {
+                    onDismissRequest()
+                })
+            }) {
+            Box(modifier = Modifier
+                .align(Alignment.Center)
                 .pointerInput(null) {
-                    detectTapGestures(onTap = {
-                        onDismissRequest()
-                    })
-                }
-        ) {
-            Box(
-                modifier = Modifier.align(Alignment.Center)
-            ) {
+                    detectTapGestures(onTap = {})
+                }) {
                 Surface(
                     modifier = modifier,
                     shape = shape,
@@ -97,16 +97,13 @@ fun PositionDialog(
                                 buttonHeightPx = it.height
                             }) {
                             PositionChildWidget(
-                                leftButton,
-                                centerButton,
-                                rightButton
+                                leftButton, centerButton, rightButton
                             ) { button ->
                                 CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.primary) {
                                     val textStyle = MaterialTheme.typography.labelLarge
                                     ProvideTextStyle(value = textStyle) {
                                         Box(
-                                            modifier = Modifier
-                                                .padding(ButtonPadding)
+                                            modifier = Modifier.padding(ButtonPadding)
                                         ) {
                                             button?.invoke()
                                         }
@@ -119,9 +116,7 @@ fun PositionDialog(
                             modifier = Modifier.padding(bottom = animateDpAsState(targetValue = buttonHeight).value)
                         ) {
                             PositionChildWidget(
-                                leftIcon,
-                                centerIcon,
-                                rightIcon
+                                leftIcon, centerIcon, rightIcon
                             ) { icon ->
                                 CompositionLocalProvider(LocalContentColor provides iconContentColor) {
                                     Box(
@@ -134,9 +129,7 @@ fun PositionDialog(
                                 }
                             }
                             PositionChildWidget(
-                                leftTitle,
-                                centerTitle,
-                                rightTitle
+                                leftTitle, centerTitle, rightTitle
                             ) { title ->
                                 CompositionLocalProvider(LocalContentColor provides titleContentColor) {
                                     ProvideTextStyle(MaterialTheme.typography.headlineSmall) {
@@ -151,9 +144,7 @@ fun PositionDialog(
                                 }
                             }
                             PositionChildWidget(
-                                leftSubtitle,
-                                centerSubtitle,
-                                rightSubtitle
+                                leftSubtitle, centerSubtitle, rightSubtitle
                             ) { subtitle ->
                                 CompositionLocalProvider(LocalContentColor provides titleContentColor) {
                                     val textStyle = MaterialTheme.typography.bodyMedium
@@ -231,8 +222,7 @@ private val SubtitlePadding =
     PaddingValues.Absolute(left = DialogSinglePadding, right = DialogSinglePadding, bottom = 12.dp)
 private val TextPadding =
     PaddingValues.Absolute(left = DialogSinglePadding, right = DialogSinglePadding, bottom = 12.dp)
-private val ContentPadding =
-    PaddingValues.Absolute(bottom = 12.dp)
+private val ContentPadding = PaddingValues.Absolute(bottom = 12.dp)
 private val ButtonPadding = PaddingValues(horizontal = DialogSinglePadding)
 
 private val MinWidth = 280.dp
