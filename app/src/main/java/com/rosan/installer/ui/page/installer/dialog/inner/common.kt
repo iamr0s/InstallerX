@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.HourglassDisabled
 import androidx.compose.material.icons.twotone.HourglassEmpty
@@ -45,15 +45,18 @@ val errorText: ((installer: InstallerRepo, viewModel: DialogViewModel) -> (@Comp
                         .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.errorContainer)
                         .fillMaxWidth()
-                        .padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     item {
                         Text(installer.error.help(), fontWeight = FontWeight.Bold)
                     }
                     item {
-                        SelectionContainer {
-                            Text(installer.error.stackTraceToString().trim())
-                        }
+                        BasicTextField(
+                            value = installer.error.stackTraceToString().trim(),
+                            onValueChange = {},
+                            readOnly = true
+                        )
                     }
                 }
             }
