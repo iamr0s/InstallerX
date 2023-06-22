@@ -31,6 +31,7 @@ import okhttp3.internal.closeQuietly
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File
+import java.util.UUID
 
 class ActionHandler(scope: CoroutineScope, installer: InstallerRepo) :
     Handler(scope, installer), KoinComponent {
@@ -42,9 +43,9 @@ class ActionHandler(scope: CoroutineScope, installer: InstallerRepo) :
 
     private val cacheParcelFileDescriptors = mutableListOf<ParcelFileDescriptor>()
 
-    private val cacheDirectory = "${context.externalCacheDir?.absolutePath}"
-
-    private val cacheFiles = mutableListOf<String>()
+    private val cacheDirectory = "${context.externalCacheDir?.absolutePath}/${installer.id}".apply {
+        File(this).mkdirs()
+    }
 
     override suspend fun onStart() {
         job = scope.launch {
@@ -67,10 +68,7 @@ class ActionHandler(scope: CoroutineScope, installer: InstallerRepo) :
             it.closeQuietly()
         }
         cacheParcelFileDescriptors.clear()
-        cacheFiles.forEach {
-            File(it).delete()
-        }
-        cacheFiles.clear()
+        File(cacheDirectory).deleteRecursively()
         job?.cancel()
     }
 
@@ -206,7 +204,6 @@ class ActionHandler(scope: CoroutineScope, installer: InstallerRepo) :
         uri: Uri,
         retry: Int = 3
     ): List<DataEntity> {
-        val retry = retry - 1
         // wait for PermissionRecords ok.
         // if not, maybe show Uri Read Permission Denied
         if (activity.checkCallingOrSelfUriPermission(
@@ -222,7 +219,6 @@ class ActionHandler(scope: CoroutineScope, installer: InstallerRepo) :
         val parcelFileDescriptor = assetFileDescriptor.parcelFileDescriptor
         val pid = Os.getpid()
         val descriptor = parcelFileDescriptor.fd
-//        val path = "/proc/$pid/task/${Os.gettid()}/fd/$descriptor"
         val path = "/proc/$pid/fd/$descriptor"
 
         // only full file, can't handle a sub-section of a file
@@ -244,12 +240,12 @@ class ActionHandler(scope: CoroutineScope, installer: InstallerRepo) :
         }
 
         // cache it
-        val tempFile = File.createTempFile(installer.id, null, File(cacheDirectory))
-        tempFile.outputStream().use {
-            assetFileDescriptor.createInputStream().copyTo(it)
+        val tempFile = File.createTempFile(UUID.randomUUID().toString(), null, File(cacheDirectory))
+        tempFile.outputStream().use { output ->
+            assetFileDescriptor.use {
+                it.createInputStream().copyTo(output)
+            }
         }
-        assetFileDescriptor.closeQuietly()
-        cacheFiles.add(tempFile.absolutePath)
         return listOf(DataEntity.FileEntity(tempFile.absolutePath))
     }
 
@@ -278,7 +274,7 @@ class ActionHandler(scope: CoroutineScope, installer: InstallerRepo) :
     }
 
     private suspend fun analyseEntities(data: List<DataEntity>): List<AppEntity> =
-        AnalyserRepoImpl().doWork(installer.config, data)
+        AnalyserRepoImpl.doWork(installer.config, data, AnalyseExtraEntity(cacheDirectory))
 
     private suspend fun install() {
         installer.progress.emit(ProgressEntity.Installing)
@@ -293,7 +289,7 @@ class ActionHandler(scope: CoroutineScope, installer: InstallerRepo) :
                         is AppEntity.DexMetadataEntity -> app.data
                     }
                 )
-            }, InstallExtraEntity(Os.getuid() / 100000))
+            }, InstallExtraEntity(Os.getuid() / 100000, cacheDirectory))
         }.getOrElse {
             installer.error = it
             installer.progress.emit(ProgressEntity.InstallFailed)

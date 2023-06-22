@@ -4,9 +4,12 @@ import com.rosan.installer.data.app.model.entity.DataEntity
 import com.rosan.installer.data.app.model.entity.InstallEntity
 
 fun List<InstallEntity>.sourcePath(): Array<String> = map {
-    when (val data = it.data.getSourceTop()) {
-        is DataEntity.FileEntity -> data.path
-        is DataEntity.ZipFileEntity -> data.path
-        else -> null
-    }
-}.filterNotNull().toTypedArray()
+    it.data.sourcePath()
+}.filterNotNull().distinct().toTypedArray()
+
+fun DataEntity.sourcePath(): String? = when (val source = this.getSourceTop()) {
+    is DataEntity.FileEntity -> source.path
+    is DataEntity.ZipFileEntity -> source.parent.path
+    is DataEntity.ZipInputStreamEntity -> source.parent.sourcePath()
+    else -> null
+}
