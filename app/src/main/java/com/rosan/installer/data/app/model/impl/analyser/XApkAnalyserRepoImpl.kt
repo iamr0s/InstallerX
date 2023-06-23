@@ -49,12 +49,14 @@ object XApkAnalyserRepoImpl : AnalyserRepo, KoinComponent {
                 Drawable.createFromStream(zip.getInputStream(it), it.name)
             }
             manifest.splits.forEach {
-                doSingleWork(
-                    config,
-                    manifest,
-                    icon,
-                    it,
-                    DataEntity.ZipFileEntity(it.name, data)
+                apps.addAll(
+                    doSingleWork(
+                        config,
+                        manifest,
+                        icon,
+                        it,
+                        DataEntity.ZipFileEntity(it.name, data)
+                    )
                 )
             }
         }
@@ -99,12 +101,14 @@ object XApkAnalyserRepoImpl : AnalyserRepo, KoinComponent {
         if (manifestOrNull == null) return apps
         val manifest = manifestOrNull!!
         manifest.splits.forEach {
-            doSingleWork(
-                config,
-                manifest,
-                icon,
-                it,
-                DataEntity.ZipInputStreamEntity(it.name, data)
+            apps.addAll(
+                doSingleWork(
+                    config,
+                    manifest,
+                    icon,
+                    it,
+                    DataEntity.ZipInputStreamEntity(it.name, data)
+                )
             )
         }
         return apps
