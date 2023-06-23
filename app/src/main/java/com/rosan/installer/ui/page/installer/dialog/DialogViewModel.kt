@@ -49,8 +49,10 @@ class DialogViewModel(
                     is ProgressEntity.Analysing -> DialogViewState.Analysing
                     is ProgressEntity.AnalysedFailed -> DialogViewState.AnalyseFailed
                     is ProgressEntity.AnalysedSuccess ->
-                        if (repo.entities.count { it.selected } != 1) DialogViewState.InstallChoice
+                        if (repo.entities.filter { it.selected }
+                                .groupBy { it.app.packageName }.size != 1) DialogViewState.InstallChoice
                         else DialogViewState.InstallPrepare
+
                     is ProgressEntity.Installing -> DialogViewState.Installing
                     is ProgressEntity.InstallFailed -> DialogViewState.InstallFailed
                     is ProgressEntity.InstallSuccess -> DialogViewState.InstallSuccess

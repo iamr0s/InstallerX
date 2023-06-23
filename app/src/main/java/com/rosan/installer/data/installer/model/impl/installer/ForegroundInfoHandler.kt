@@ -21,8 +21,7 @@ import org.koin.core.component.inject
 class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerRepo) :
     Handler(scope, installer), KoinComponent {
     enum class Channel(val value: String) {
-        InstallerChannel("installer_channel"),
-        InstallerProgressChannel("installer_progress_channel")
+        InstallerChannel("installer_channel"), InstallerProgressChannel("installer_progress_channel")
     }
 
     enum class Icon(@DrawableRes val resId: Int) {
@@ -72,8 +71,7 @@ class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerRepo) :
     )
 
     private fun newNotificationBuilder(
-        progress: ProgressEntity,
-        background: Boolean
+        progress: ProgressEntity, background: Boolean
     ): NotificationCompat.Builder {
         val isWorking = workingProgresses.contains(progress)
         val isImportance = importanceProgresses.contains(progress)
@@ -96,8 +94,7 @@ class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerRepo) :
     }
 
     private fun newNotification(
-        progress: ProgressEntity,
-        background: Boolean
+        progress: ProgressEntity, background: Boolean
     ): Notification? {
         val builder = newNotificationBuilder(progress, background)
         return when (progress) {
@@ -189,7 +186,8 @@ class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerRepo) :
             .addAction(0, getString(R.string.retry), analyseIntent).build()
 
     private fun onAnalysedSuccess(builder: NotificationCompat.Builder): Notification {
-        return (if (installer.entities.count { it.selected } != 1) builder.setContentTitle(
+        return (if (installer.entities.filter { it.selected }
+                .groupBy { it.app.packageName }.size != 1) builder.setContentTitle(
             getString(
                 R.string.installer_prepare_install
             )
