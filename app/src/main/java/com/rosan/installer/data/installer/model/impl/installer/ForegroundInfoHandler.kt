@@ -150,15 +150,16 @@ class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerRepo) :
         notificationManager.notify(notificationId, notification)
     }
 
-    private val openIntent = BroadcastHandler.openPendingIntent(context, installer)
+    private val openIntent = BroadcastHandler.openIntent(context, installer)
 
-    private val analyseIntent = BroadcastHandler.analysePendingIntent(context, installer)
+    private val analyseIntent =
+        BroadcastHandler.namedIntent(context, installer, BroadcastHandler.Name.Analyse)
 
-    private val installIntent = BroadcastHandler.installPendingIntent(context, installer)
+    private val installIntent =
+        BroadcastHandler.namedIntent(context, installer, BroadcastHandler.Name.Install)
 
-    private val finishIntent = BroadcastHandler.finishPendingIntent(context, installer)
-
-    private val launchIntent = BroadcastHandler.launchPendingIntent(context, installer)
+    private val finishIntent =
+        BroadcastHandler.namedIntent(context, installer, BroadcastHandler.Name.Finish)
 
     private fun onReady(builder: NotificationCompat.Builder) =
         builder.setContentTitle(getString(R.string.installer_ready))
@@ -182,20 +183,17 @@ class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerRepo) :
 
     private fun onAnalysedFailed(builder: NotificationCompat.Builder) =
         builder.setContentTitle(getString(R.string.installer_analyse_failed))
-            .addAction(0, getString(R.string.cancel), finishIntent)
-            .addAction(0, getString(R.string.retry), analyseIntent).build()
+            .addAction(0, getString(R.string.retry), analyseIntent)
+            .addAction(0, getString(R.string.cancel), finishIntent).build()
 
     private fun onAnalysedSuccess(builder: NotificationCompat.Builder): Notification {
-        return (if (installer.entities.filter { it.selected }
-                .groupBy { it.app.packageName }.size != 1) builder.setContentTitle(
-            getString(
-                R.string.installer_prepare_install
-            )
+        val selected = installer.entities.filter { it.selected }
+        return (if (selected.groupBy { it.app.packageName }.size != 1) builder.setContentTitle(
+            getString(R.string.installer_prepare_install)
         ).addAction(0, getString(R.string.cancel), finishIntent)
         else {
-            val info = installer.entities.filter { it.selected }.map { it.app }.getInfo(context)
-            builder.setContentText(getString(R.string.installer_prepare_install_dsp))
-                .setContentTitle(info.title)
+            val info = selected.map { it.app }.getInfo(context)
+            builder.setContentTitle(info.title)
                 .setContentText(getString(R.string.installer_prepare_install_dsp))
                 .setLargeIcon(info.icon?.toBitmapOrNull())
                 .addAction(0, getString(R.string.install), installIntent)
@@ -223,13 +221,19 @@ class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerRepo) :
     private fun onInstallSuccess(builder: NotificationCompat.Builder): Notification {
         val entities = installer.entities.filter { it.selected }.map { it.app }
         val info = entities.getInfo(context)
-        val intent = context.packageManager.getLaunchIntentForPackage(entities.first().packageName)
-        return builder.setContentTitle(info.title)
+        val launchIntent =
+            context.packageManager.getLaunchIntentForPackage(entities.first().packageName)
+        val launchPendingIntent = launchIntent?.let {
+            BroadcastHandler.launchIntent(context, installer, it)
+        }
+
+        var newBuilder = builder.setContentTitle(info.title)
             .setContentText(getString(R.string.installer_install_success))
             .setLargeIcon(info.icon?.toBitmapOrNull())
-            .addAction(0, getString(R.string.finish), finishIntent).let {
-                if (intent != null) it.addAction(0, getString(R.string.open), launchIntent)
-                else it
-            }.build()
+        if (launchIntent != null) newBuilder =
+            newBuilder.addAction(0, getString(R.string.open), launchPendingIntent)
+        return newBuilder
+            .addAction(0, getString(R.string.finish), finishIntent)
+            .build()
     }
 }
