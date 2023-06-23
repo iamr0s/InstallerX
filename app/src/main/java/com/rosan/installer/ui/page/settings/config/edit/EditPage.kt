@@ -190,16 +190,16 @@ fun DataDescriptionWidget(viewModel: EditViewModel) {
 fun DataAuthorizerWidget(viewModel: EditViewModel) {
     val authorizer = viewModel.state.data.authorizer
     val data = mapOf(
-        ConfigEntity.Authorizer.Global to stringResource(id = R.string.config_authorizer_global),
-        ConfigEntity.Authorizer.None to stringResource(id = R.string.config_authorizer_none),
-        ConfigEntity.Authorizer.Root to stringResource(id = R.string.config_authorizer_root),
-        ConfigEntity.Authorizer.Shizuku to stringResource(id = R.string.config_authorizer_shizuku),
-        ConfigEntity.Authorizer.Dhizuku to stringResource(id = R.string.config_authorizer_dhizuku),
-        ConfigEntity.Authorizer.Customize to stringResource(id = R.string.config_authorizer_customize),
+        ConfigEntity.Authorizer.Global to stringResource(R.string.config_authorizer_global),
+        ConfigEntity.Authorizer.None to stringResource(R.string.config_authorizer_none),
+        ConfigEntity.Authorizer.Root to stringResource(R.string.config_authorizer_root),
+        ConfigEntity.Authorizer.Shizuku to stringResource(R.string.config_authorizer_shizuku),
+        ConfigEntity.Authorizer.Dhizuku to stringResource(R.string.config_authorizer_dhizuku),
+        ConfigEntity.Authorizer.Customize to stringResource(R.string.config_authorizer_customize)
     )
     DropDownMenuWidget(
         icon = Icons.TwoTone.Memory,
-        title = stringResource(id = R.string.config_authorizer),
+        title = stringResource(R.string.config_authorizer),
         description = if (data.containsKey(authorizer)) data[authorizer] else null,
         choice = data.keys.toList().indexOf(authorizer),
         data = data.values.toList(),
@@ -223,7 +223,7 @@ fun DataCustomizeAuthorizerWidget(viewModel: EditViewModel) {
             Icon(imageVector = Icons.TwoTone.Terminal, contentDescription = null)
         },
         label = {
-            Text(text = stringResource(id = R.string.config_customize_authorizer))
+            Text(text = stringResource(R.string.config_customize_authorizer))
         },
         value = customizeAuthorizer,
         onValueChange = { viewModel.dispatch(EditViewAction.ChangeDataCustomizeAuthorizer(it)) },
@@ -236,15 +236,16 @@ fun DataCustomizeAuthorizerWidget(viewModel: EditViewModel) {
 fun DataInstallModeWidget(viewModel: EditViewModel) {
     val installMode = viewModel.state.data.installMode
     val data = mapOf(
-        ConfigEntity.InstallMode.Dialog to stringResource(id = R.string.config_install_mode_dialog),
-        ConfigEntity.InstallMode.AutoDialog to stringResource(id = R.string.config_install_mode_auto_dialog),
-        ConfigEntity.InstallMode.Notification to stringResource(id = R.string.config_install_mode_notification),
-        ConfigEntity.InstallMode.AutoNotification to stringResource(id = R.string.config_install_mode_auto_notification),
-        ConfigEntity.InstallMode.Ignore to stringResource(id = R.string.config_install_mode_ignore),
+        ConfigEntity.InstallMode.Global to stringResource(R.string.config_install_mode_global),
+        ConfigEntity.InstallMode.Dialog to stringResource(R.string.config_install_mode_dialog),
+        ConfigEntity.InstallMode.AutoDialog to stringResource(R.string.config_install_mode_auto_dialog),
+        ConfigEntity.InstallMode.Notification to stringResource(R.string.config_install_mode_notification),
+        ConfigEntity.InstallMode.AutoNotification to stringResource(R.string.config_install_mode_auto_notification),
+        ConfigEntity.InstallMode.Ignore to stringResource(R.string.config_install_mode_ignore),
     )
     DropDownMenuWidget(
         icon = Icons.TwoTone.Downloading,
-        title = stringResource(id = R.string.config_install_mode),
+        title = stringResource(R.string.config_install_mode),
         description = if (data.containsKey(installMode)) data[installMode] else null,
         choice = data.keys.toList().indexOf(installMode),
         data = data.values.toList(),

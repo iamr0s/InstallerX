@@ -33,7 +33,7 @@ data class ConfigEntity(
             description = "",
             authorizer = Authorizer.Global,
             customizeAuthorizer = "",
-            installMode = InstallMode.Dialog,
+            installMode = InstallMode.Global,
             installer = null,
             forAllUser = false,
             allowTestOnly = false,
@@ -55,6 +55,7 @@ data class ConfigEntity(
     }
 
     enum class InstallMode(val value: String) {
+        Global("global"),
         Dialog("dialog"),
         AutoDialog("auto_dialog"),
         Notification("notification"),

@@ -4,6 +4,7 @@ import android.content.Context
 import com.rosan.installer.data.settings.model.room.entity.AppEntity
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
 import com.rosan.installer.data.settings.model.room.entity.converter.AuthorizerConverter
+import com.rosan.installer.data.settings.model.room.entity.converter.InstallModeConverter
 import com.rosan.installer.data.settings.repo.AppRepo
 import com.rosan.installer.data.settings.repo.ConfigRepo
 import kotlinx.coroutines.Dispatchers
@@ -24,14 +25,19 @@ class ConfigUtil {
         val globalCustomizeAuthorizer: String
             get() = sharedPreferences.getString("customize_authorizer", null) ?: ""
 
+        val globalInstallMode: ConfigEntity.InstallMode
+            get() = InstallModeConverter.revert(sharedPreferences.getString("install_mode", null))
+
         suspend fun getByPackageName(packageName: String? = null): ConfigEntity {
-            val entity = getByPackageNameInner(packageName)
-            return if (entity.authorizer != ConfigEntity.Authorizer.Global)
-                entity.copy()
-            else entity.copy(
-                authorizer = globalAuthorizer,
-                customizeAuthorizer = globalCustomizeAuthorizer
-            )
+            var entity = getByPackageNameInner(packageName)
+            if (entity.authorizer == ConfigEntity.Authorizer.Global)
+                entity = entity.copy(
+                    authorizer = globalAuthorizer,
+                    customizeAuthorizer = globalCustomizeAuthorizer
+                )
+            if (entity.installMode == ConfigEntity.InstallMode.Global)
+                entity = entity.copy(installMode = globalInstallMode)
+            return entity
         }
 
         private suspend fun getByPackageNameInner(packageName: String? = null): ConfigEntity =

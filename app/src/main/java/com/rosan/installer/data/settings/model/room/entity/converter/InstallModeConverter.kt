@@ -5,9 +5,9 @@ import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
 
 object InstallModeConverter {
     @TypeConverter
-    fun revert(value: String): ConfigEntity.InstallMode =
-        ConfigEntity.InstallMode.values().find { it.value == value }
-            ?: ConfigEntity.InstallMode.Dialog
+    fun revert(value: String?): ConfigEntity.InstallMode =
+        (if (value != null) ConfigEntity.InstallMode.values().find { it.value == value }
+        else null) ?: ConfigEntity.InstallMode.Dialog
 
     @TypeConverter
     fun convert(value: ConfigEntity.InstallMode): String = value.value
