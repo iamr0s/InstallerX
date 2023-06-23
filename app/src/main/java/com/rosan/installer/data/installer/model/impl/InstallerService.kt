@@ -48,41 +48,46 @@ class InstallerService : Service() {
     }
 
     private fun setForeground(enable: Boolean) {
-        synchronized(this) {
-            if (!enable) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                    stopForeground(STOP_FOREGROUND_REMOVE)
-                return
-            }
+        if (!enable) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            else stopForeground(true)
+            return
+        }
 
-            val id = this.hashCode()
+        val id = this.hashCode()
 
-            val channelId = "installer_background_channel"
-            val channel =
-                NotificationChannelCompat.Builder(
-                    channelId,
-                    NotificationManagerCompat.IMPORTANCE_MIN
-                )
-                    .setName(getString(R.string.installer_background_channel_name)).build()
-            val manager = NotificationManagerCompat.from(this)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) manager.createNotificationChannel(
-                channel
+        val channelId = "installer_background_channel"
+        val channel =
+            NotificationChannelCompat.Builder(
+                channelId,
+                NotificationManagerCompat.IMPORTANCE_MIN
             )
+                .setName(getString(R.string.installer_background_channel_name)).build()
+        val manager = NotificationManagerCompat.from(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) manager.createNotificationChannel(
+            channel
+        )
 
-            val flags =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                else PendingIntent.FLAG_UPDATE_CURRENT
+        val flags =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            else PendingIntent.FLAG_UPDATE_CURRENT
 
-            val cancelIntent = Intent(Action.Destroy.value)
-            cancelIntent.component = ComponentName(this, InstallerService::class.java)
-            val cancelPendingIntent = PendingIntent.getService(this, 0, cancelIntent, flags)
+        val cancelIntent = Intent(Action.Destroy.value)
+        cancelIntent.component = ComponentName(this, InstallerService::class.java)
+        val cancelPendingIntent = PendingIntent.getService(this, 0, cancelIntent, flags)
 
-            val notification = NotificationCompat.Builder(this, channelId)
-                .setSmallIcon(R.drawable.round_hourglass_empty_black_24)
-                .setContentTitle(getString(R.string.installer_running))
-                .addAction(0, getString(R.string.cancel), cancelPendingIntent)
-                .setDeleteIntent(cancelPendingIntent).build()
-            startForeground(id, notification)
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.drawable.round_hourglass_empty_black_24)
+            .setContentTitle(getString(R.string.installer_running))
+            .addAction(0, getString(R.string.cancel), cancelPendingIntent)
+            .setDeleteIntent(cancelPendingIntent).build()
+        startForeground(id, notification)
+    }
+
+    private fun autoForeground() {
+        synchronized(this) {
+            setForeground(scopes.isNotEmpty())
         }
     }
 
@@ -109,7 +114,6 @@ class InstallerService : Service() {
     }
 
     private fun ready(installer: InstallerRepo) {
-        setForeground(true)
         val id = installer.id
         if (scopes[id] != null) return
         val scope = CoroutineScope(Dispatchers.IO)
@@ -132,6 +136,8 @@ class InstallerService : Service() {
                 }
             }
         }
+
+        autoForeground()
     }
 
     private fun finish(installer: InstallerRepo) {
@@ -146,7 +152,7 @@ class InstallerService : Service() {
 
         timeoutJob?.cancel()
         timeoutJob = lifecycleScope.launch {
-            setForeground(false)
+            autoForeground()
             delay(15.seconds)
             if (scopes.isEmpty()) destroy()
         }
