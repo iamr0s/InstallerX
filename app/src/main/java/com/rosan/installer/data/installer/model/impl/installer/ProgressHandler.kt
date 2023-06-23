@@ -51,7 +51,8 @@ class ProgressHandler(scope: CoroutineScope, installer: InstallerRepo) : Handler
             installMode != ConfigEntity.InstallMode.AutoDialog
             && installMode != ConfigEntity.InstallMode.AutoNotification
         ) return
-        if (installer.entities.count { it.selected } != 1) return
+        if (installer.entities.filter { it.selected }
+                .groupBy { it.app.packageName }.keys.size != 1) return
         installer.install()
     }
 }
