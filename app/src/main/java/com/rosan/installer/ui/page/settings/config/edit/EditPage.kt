@@ -99,7 +99,7 @@ fun EditPage(
                 ExtendedFloatingActionButton(
                     icon = {
                         Icon(
-                            imageVector = Icons.TwoTone.Add,
+                            imageVector = Icons.TwoTone.Check,
                             contentDescription = text
                         )
                     },
