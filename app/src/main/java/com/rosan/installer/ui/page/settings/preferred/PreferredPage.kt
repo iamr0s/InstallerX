@@ -66,7 +66,7 @@ fun PreferredPage(
                 .fillMaxSize()
                 .padding(it)
         ) {
-            item { LabelWidget(stringResource(R.string.config)) }
+            item { LabelWidget(stringResource(R.string.global)) }
             item { DataAuthorizerWidget(viewModel) }
             item { DataCustomizeAuthorizerWidget(viewModel) }
             item { DataInstallModeWidget(viewModel) }

@@ -384,7 +384,7 @@ fun ItemWidget(
                     .weight(1f)
             ) {
                 Text(
-                    text = app.label ?: app.packageName ?: stringResource(R.string.global),
+                    text = app.label ?: app.packageName,
                     style = MaterialTheme.typography.titleMedium
                 )
                 AnimatedVisibility(viewModel.state.showPackageName) {
@@ -438,12 +438,12 @@ private fun LabelWidget(text: String) {
 private fun OrderWidget(viewModel: ApplyViewModel) {
     LabelWidget(stringResource(R.string.sort))
 
-    data class OrderData(val label: String, val type: ApplyViewState.OrderType)
+    data class OrderData(val labelResId: Int, val type: ApplyViewState.OrderType)
 
     val map = listOf(
-        OrderData("名称", ApplyViewState.OrderType.Label),
-        OrderData("包名", ApplyViewState.OrderType.PackageName),
-        OrderData("安装时间", ApplyViewState.OrderType.FirstInstallTime)
+        OrderData(R.string.sort_by_label, ApplyViewState.OrderType.Label),
+        OrderData(R.string.sort_by_package_name, ApplyViewState.OrderType.PackageName),
+        OrderData(R.string.sort_by_install_time, ApplyViewState.OrderType.FirstInstallTime)
     )
 
     val selectedIndex = map.map { it.type }.indexOf(viewModel.state.orderType)
@@ -453,7 +453,7 @@ private fun OrderWidget(viewModel: ApplyViewModel) {
             Toggle(selected = selectedIndex == index, onSelected = {
                 viewModel.dispatch(ApplyViewAction.Order(value.type))
             }) {
-                Text(value.label)
+                Text(stringResource(value.labelResId))
             }
         }
     }
@@ -472,25 +472,25 @@ private fun ChipsWidget(viewModel: ApplyViewModel) {
         val showPackageName = viewModel.state.showPackageName
         Chip(
             selected = orderInReverse,
-            label = "排序倒序",
+            label = stringResource(R.string.sort_by_reverse_order),
             icon = Icons.TwoTone.Sort,
             onClick = { viewModel.dispatch(ApplyViewAction.OrderInReverse(!orderInReverse)) }
         )
         Chip(
             selected = selectedFirst,
-            label = "选中优先",
+            label = stringResource(R.string.sort_by_selected_first),
             icon = Icons.TwoTone.LibraryAddCheck,
             onClick = { viewModel.dispatch(ApplyViewAction.SelectedFirst(!selectedFirst)) }
         )
         Chip(
             selected = showSystemApp,
-            label = "显示系统应用",
+            label = stringResource(R.string.sort_by_show_system_app),
             icon = Icons.TwoTone.Shield,
             onClick = { viewModel.dispatch(ApplyViewAction.ShowSystemApp(!showSystemApp)) }
         )
         Chip(
             selected = showPackageName,
-            label = "显示包名",
+            label = stringResource(R.string.sort_by_show_package_name),
             icon = Icons.TwoTone.Visibility,
             onClick = { viewModel.dispatch(ApplyViewAction.ShowPackageName(!showPackageName)) }
         )

@@ -116,30 +116,6 @@ fun StatusWidget() {
     )
 }
 
-@Composable
-fun InfoWidget() {
-    val items = listOf(
-        HomeCardItem(
-            label = stringResource(id = R.string.system_version),
-            content = RsConfig.systemVersion
-        ),
-        HomeCardItem(
-            label = stringResource(id = R.string.device_name),
-            content = RsConfig.deviceName
-        ),
-        HomeCardItem(
-            label = stringResource(id = R.string.system_struct),
-            content = RsConfig.systemStruct
-        )
-    )
-    ItemsCardWidget(
-        title = {
-            Text(text = stringResource(id = R.string.version_info))
-        },
-        items = items
-    )
-}
-
 fun openUrl(context: Context, url: String) {
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -198,15 +174,6 @@ fun DiscussWidget() {
                 openUrl(
                     context,
                     "https://qm.qq.com/cgi-bin/qm/qr?k=YMyAigxnns_FkISlRaormMiApHr2RmU7&jump_from=webapi&qr=1"
-                )
-            }
-        ),
-        HomeCardItem(
-            label = stringResource(id = R.string.qq_group_1),
-            onClick = {
-                openUrl(
-                    context,
-                    "https://qm.qq.com/cgi-bin/qm/qr?k=Xf40z0xnN-9zVnucuErSySLB32oN_IVV&jump_from=webapi&qr=1"
                 )
             }
         ),
