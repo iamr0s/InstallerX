@@ -21,20 +21,26 @@ import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.rosan.installer.R
 import com.rosan.installer.build.Level
 import com.rosan.installer.build.RsConfig
+import com.rosan.installer.ui.theme.none
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomePage(navController: NavController) {
+fun HomePage(
+    navController: NavController,
+    windowInsets: WindowInsets
+) {
     Scaffold(
         modifier = Modifier
+            .windowInsetsPadding(windowInsets)
             .fillMaxSize(),
+        contentWindowInsets = WindowInsets.none,
         topBar = {
             TopAppBar(
                 title = {
                     Text(text = stringResource(id = R.string.home))
                 },
             )
-        }
+        },
     ) {
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
@@ -46,9 +52,6 @@ fun HomePage(navController: NavController) {
             item {
                 StatusWidget()
             }
-//            item {
-//                InfoWidget()
-//            }
             item {
                 DonateWidget()
             }

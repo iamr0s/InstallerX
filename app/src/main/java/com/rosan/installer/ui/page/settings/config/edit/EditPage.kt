@@ -5,9 +5,12 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.*
@@ -24,6 +27,7 @@ import androidx.navigation.NavController
 import com.rosan.installer.R
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
 import com.rosan.installer.data.settings.util.ConfigUtil
+import com.rosan.installer.ui.theme.none
 import com.rosan.installer.ui.widget.setting.DropDownMenuWidget
 import com.rosan.installer.ui.widget.setting.LabelWidget
 import com.rosan.installer.ui.widget.setting.SwitchWidget
@@ -32,7 +36,9 @@ import org.koin.androidx.compose.getViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.math.absoluteValue
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class
+)
 @Composable
 fun EditPage(
     navController: NavController,
@@ -71,7 +77,9 @@ fun EditPage(
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.safeDrawing)
             .nestedScroll(ShowFloatingActionButtonNestedScrollConnection(showFloatingState)),
+        contentWindowInsets = WindowInsets.none,
         topBar = {
             TopAppBar(
                 title = {
@@ -95,16 +103,16 @@ fun EditPage(
                 enter = scaleIn(),
                 exit = scaleOut()
             ) {
-                val text = stringResource(id = R.string.save)
+                val text = stringResource(R.string.save)
                 ExtendedFloatingActionButton(
                     icon = {
                         Icon(
-                            imageVector = Icons.TwoTone.Add,
+                            imageVector = Icons.TwoTone.Save,
                             contentDescription = text
                         )
                     },
                     text = {
-                        Text(text = text)
+                        Text(text)
                     },
                     onClick = {
                         viewModel.dispatch(EditViewAction.SaveData)

@@ -18,10 +18,13 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -92,6 +95,7 @@ import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.rosan.installer.R
 import com.rosan.installer.ui.common.ViewContent
 import com.rosan.installer.ui.page.installer.dialog.inner.Chip
+import com.rosan.installer.ui.theme.none
 import com.rosan.installer.ui.widget.toggle.Toggle
 import com.rosan.installer.ui.widget.toggle.ToggleRow
 import kotlinx.coroutines.Dispatchers
@@ -128,18 +132,20 @@ fun ApplyPage(
 
     Scaffold(modifier = Modifier
         .fillMaxSize()
+        .windowInsetsPadding(WindowInsets.safeDrawing)
         .nestedScroll(
             ShowFloatingActionButtonNestedScrollConnection(
                 showFloatingState,
                 lazyListState
             )
         ),
+        contentWindowInsets = WindowInsets.none,
         topBar = {
             var searchBarActived by remember {
                 mutableStateOf(false)
             }
             TopAppBar(title = {
-                AnimatedContent(targetState = searchBarActived) {
+                @Suppress("AnimatedContentLabel") AnimatedContent(targetState = searchBarActived) {
                     if (!it) Text(stringResource(R.string.app))
                     else {
                         val focusRequester = remember {

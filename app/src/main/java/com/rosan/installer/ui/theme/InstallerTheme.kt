@@ -1,13 +1,22 @@
 package com.rosan.installer.ui.theme
 
+import android.app.Activity
 import android.os.Build
+import android.view.WindowManager
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.colorResource
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import androidx.core.view.WindowCompat
 import com.rosan.installer.R
 
 @Composable
@@ -22,6 +31,7 @@ fun InstallerTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
+
         darkTheme -> darkColorScheme(
             primary = colorResource(R.color.dark_primary),
             primaryContainer = colorResource(R.color.dark_primary_container),
@@ -29,6 +39,7 @@ fun InstallerTheme(
             tertiary = colorResource(R.color.dark_tertiary),
             error = colorResource(R.color.dark_error)
         )
+
         else -> lightColorScheme(
             primary = colorResource(R.color.light_primary),
             primaryContainer = colorResource(R.color.light_primary_container),
@@ -36,25 +47,29 @@ fun InstallerTheme(
             tertiary = colorResource(R.color.light_tertiary)
         )
     }
-    val systemUiController = rememberSystemUiController()
+    val view = LocalView.current
     SideEffect {
-        systemUiController.setStatusBarColor(
-            color = colorScheme.surface,
-            darkIcons = !darkTheme
-        )
-        systemUiController.setNavigationBarColor(
-            color = colorScheme.surface,
-            darkIcons = !darkTheme
-        )
+        val window = (view.context as Activity).window
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+            window.attributes.layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        window.statusBarColor = Color.Transparent.toArgb()
+        WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars =
+            !darkTheme
+        window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+
+        window.navigationBarColor = Color.Transparent.toArgb()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+            window.navigationBarDividerColor = Color.Transparent.toArgb()
+        window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+
+        WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars =
+            !darkTheme
     }
-    /*val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            (view.context as Activity).window.setStatusBarColor()
-            (view.context as Activity).window.navigationBarColor = colorScheme.primary.toArgb()
-            ViewCompat.getWindowInsetsController(view)?.isAppearanceLightStatusBars = darkTheme
-        }
-    }*/
 
     MaterialTheme(
         colorScheme = colorScheme,

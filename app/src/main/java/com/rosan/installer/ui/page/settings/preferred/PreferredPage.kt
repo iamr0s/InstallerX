@@ -6,9 +6,11 @@ import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -27,6 +29,7 @@ import com.rosan.installer.R
 import com.rosan.installer.data.app.model.impl.DSRepoImpl
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
 import com.rosan.installer.data.settings.util.ConfigUtil
+import com.rosan.installer.ui.theme.none
 import com.rosan.installer.ui.widget.setting.BaseWidget
 import com.rosan.installer.ui.widget.setting.DropDownMenuWidget
 import com.rosan.installer.ui.widget.setting.LabelWidget
@@ -40,6 +43,7 @@ import java.io.File
 @Composable
 fun PreferredPage(
     navController: NavController,
+    windowInsets: WindowInsets,
     viewModel: PreferredViewModel = getViewModel()
 ) {
     LaunchedEffect(true) {
@@ -51,7 +55,9 @@ fun PreferredPage(
     }
     Scaffold(
         modifier = Modifier
+            .windowInsetsPadding(windowInsets)
             .fillMaxSize(),
+        contentWindowInsets = WindowInsets.none,
         topBar = {
             TopAppBar(
                 title = {

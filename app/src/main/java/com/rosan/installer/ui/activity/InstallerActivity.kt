@@ -6,7 +6,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -110,7 +109,6 @@ class InstallerActivity : ComponentActivity(), KoinComponent {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .imePadding()
                 ) {
                     InstallerPage(installer)
                 }

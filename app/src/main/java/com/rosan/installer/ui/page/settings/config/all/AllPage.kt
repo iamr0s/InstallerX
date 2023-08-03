@@ -10,10 +10,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
@@ -62,6 +64,7 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.rosan.installer.R
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
 import com.rosan.installer.ui.page.settings.SettingsScreen
+import com.rosan.installer.ui.theme.none
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.getViewModel
 import org.koin.core.parameter.parametersOf
@@ -71,6 +74,7 @@ import kotlin.math.absoluteValue
 @Composable
 fun AllPage(
     navController: NavController,
+    windowInsets: WindowInsets,
     viewModel: AllViewModel = getViewModel {
         parametersOf(navController)
     }
@@ -112,7 +116,9 @@ fun AllPage(
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
+            .windowInsetsPadding(windowInsets)
             .nestedScroll(ShowFloatingActionButtonNestedScrollConnection(showFloatingState)),
+        contentWindowInsets = WindowInsets.none,
         topBar = {
             TopAppBar(
                 title = {
