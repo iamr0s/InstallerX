@@ -109,6 +109,9 @@
     <string name="clear">清除</string>
     <string name="global">全局</string>
 
+    <string name="options">选项</string>
+    <string name="sort">排序</string>
+
     <string name="name_separator">、</string>
 
     <string name="installer_resolve_error">入口动作：%s\n资源标识：%s</string>

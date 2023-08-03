@@ -1,9 +1,21 @@
 package com.rosan.installer.ui.page.settings.config.apply
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,51 +23,89 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.ArrowBack
+import androidx.compose.material.icons.twotone.ArrowUpward
+import androidx.compose.material.icons.twotone.Close
+import androidx.compose.material.icons.twotone.LibraryAddCheck
+import androidx.compose.material.icons.twotone.Menu
+import androidx.compose.material.icons.twotone.Search
+import androidx.compose.material.icons.twotone.Shield
+import androidx.compose.material.icons.twotone.Sort
+import androidx.compose.material.icons.twotone.Visibility
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
-import androidx.compose.material3.Checkbox
+import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.rosan.installer.R
 import com.rosan.installer.ui.common.ViewContent
+import com.rosan.installer.ui.page.installer.dialog.inner.Chip
+import com.rosan.installer.ui.widget.toggle.Toggle
+import com.rosan.installer.ui.widget.toggle.ToggleRow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.getViewModel
 import org.koin.core.parameter.parametersOf
+import kotlin.math.absoluteValue
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class, ExperimentalAnimationApi::class
+)
 @Composable
 fun ApplyPage(
-    navController: NavController,
-    id: Long,
-    viewModel: ApplyViewModel = getViewModel {
+    navController: NavController, id: Long, viewModel: ApplyViewModel = getViewModel {
         parametersOf(id)
     }
 ) {
@@ -63,52 +113,117 @@ fun ApplyPage(
         viewModel.dispatch(ApplyViewAction.Init)
     }
 
-    val snackBarHostState = remember {
-        SnackbarHostState()
+    val scope = rememberCoroutineScope()
+
+    val showFloatingState = remember {
+        mutableStateOf(false)
     }
-    Scaffold(
-        modifier = Modifier
-            .fillMaxSize(),
+    var showFloating by showFloatingState
+
+    var showBottomSheet by remember {
+        mutableStateOf(false)
+    }
+
+    val lazyListState = rememberLazyListState()
+
+    Scaffold(modifier = Modifier
+        .fillMaxSize()
+        .nestedScroll(
+            ShowFloatingActionButtonNestedScrollConnection(
+                showFloatingState,
+                lazyListState
+            )
+        ),
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(text = stringResource(id = R.string.app))
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            imageVector = Icons.TwoTone.ArrowBack,
-                            contentDescription = stringResource(
-                                id = R.string.back
-                            )
+            var searchBarActived by remember {
+                mutableStateOf(false)
+            }
+            TopAppBar(title = {
+                AnimatedContent(targetState = searchBarActived) {
+                    if (!it) Text(stringResource(R.string.app))
+                    else {
+                        val focusRequester = remember {
+                            FocusRequester()
+                        }
+                        OutlinedTextField(
+                            modifier = Modifier.focusRequester(focusRequester),
+                            value = viewModel.state.search,
+                            onValueChange = { viewModel.dispatch(ApplyViewAction.Search(it)) },
+                            singleLine = true,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.TwoTone.Search, contentDescription = null
+                                )
+                            },
+                            trailingIcon = {
+                                IconButton(onClick = {
+                                    searchBarActived = false
+                                    viewModel.dispatch(ApplyViewAction.Search(""))
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.TwoTone.Close, contentDescription = null
+                                    )
+                                }
+                            },
+                            textStyle = MaterialTheme.typography.titleMedium
                         )
+                        SideEffect {
+                            focusRequester.requestFocus()
+                        }
                     }
                 }
-            )
-        },
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-    ) {
+            }, navigationIcon = {
+                IconButton(onClick = { navController.navigateUp() }) {
+                    Icon(
+                        imageVector = Icons.TwoTone.ArrowBack,
+                        contentDescription = stringResource(R.string.back)
+                    )
+                }
+            }, actions = {
+                AnimatedVisibility(visible = !searchBarActived) {
+                    IconButton(onClick = { searchBarActived = !searchBarActived }) {
+                        Icon(imageVector = Icons.TwoTone.Search, contentDescription = null)
+                    }
+                }
+                IconButton(onClick = { showBottomSheet = true }) {
+                    Icon(imageVector = Icons.TwoTone.Menu, contentDescription = null)
+                }
+            })
+        }, floatingActionButton = {
+            AnimatedVisibility(
+                visible = showFloating,
+                enter = scaleIn(),
+                exit = scaleOut()
+            ) {
+                FloatingActionButton({
+                    scope.launch {
+                        showFloating = false
+                        lazyListState.animateScrollToItem(0)
+                    }
+                }) {
+                    Icon(imageVector = Icons.TwoTone.ArrowUpward, contentDescription = null)
+                }
+            }
+        }) {
         Box(modifier = Modifier.padding(it)) {
             when {
-                viewModel.state.apps.progress is ViewContent.Progress.Loading
-                        && viewModel.state.apps.data.isEmpty() -> {
+                viewModel.state.apps.progress is ViewContent.Progress.Loading && viewModel.state.apps.data.isEmpty() -> {
                     LottieWidget(
                         contentPadding = it,
                         spec = LottieCompositionSpec.RawRes(R.raw.loading),
                         text = stringResource(id = R.string.loading)
                     )
                 }
+
                 else -> {
                     val refreshing = viewModel.state.apps.progress is ViewContent.Progress.Loading
-                    val pullRefreshState = rememberPullRefreshState(
-                        refreshing = refreshing,
-                        onRefresh = { viewModel.dispatch(ApplyViewAction.LoadApps) }
-                    )
+                    val pullRefreshState = rememberPullRefreshState(refreshing = refreshing,
+                        onRefresh = { viewModel.dispatch(ApplyViewAction.LoadApps) })
                     Box(modifier = Modifier.pullRefresh(pullRefreshState)) {
                         ItemsWidget(
-                            modifier = Modifier
-                                .fillMaxSize(),
+                            modifier = Modifier.fillMaxSize(),
                             viewModel = viewModel,
+                            lazyListState = lazyListState
                         )
                         PullRefreshIndicator(
                             modifier = Modifier.align(Alignment.TopCenter),
@@ -120,13 +235,28 @@ fun ApplyPage(
             }
         }
     }
+
+    if (showBottomSheet) ModalBottomSheet(onDismissRequest = { showBottomSheet = false }) {
+        BottomSheetContent(viewModel)
+    }
+}
+
+private class ShowFloatingActionButtonNestedScrollConnection(
+    private val showFloatingState: MutableState<Boolean>,
+    private val lazyListState: LazyListState
+) : NestedScrollConnection {
+    override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+        if (available.y.absoluteValue > 1)
+            showFloatingState.value = if (!lazyListState.isScrollInProgress) false
+            else available.y > 1 && lazyListState.firstVisibleItemIndex > 1
+
+        return super.onPreScroll(available, source)
+    }
 }
 
 @Composable
 fun LottieWidget(
-    contentPadding: PaddingValues,
-    spec: LottieCompositionSpec,
-    text: String
+    contentPadding: PaddingValues, spec: LottieCompositionSpec, text: String
 ) {
     Box(
         modifier = Modifier
@@ -145,114 +275,224 @@ fun LottieWidget(
                 composition = composition,
                 iterations = LottieConstants.IterateForever,
             )
-            LottieAnimation(
-                modifier = Modifier
-                    .size(200.dp),
+            LottieAnimation(modifier = Modifier.size(200.dp),
                 composition = composition,
-                progress = { progress }
-            )
+                progress = { progress })
             Text(
-                text = text,
-                style = MaterialTheme.typography.titleLarge
+                text = text, style = MaterialTheme.typography.titleLarge
             )
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ItemsWidget(
     modifier: Modifier,
-    viewModel: ApplyViewModel
+    viewModel: ApplyViewModel,
+    lazyListState: LazyListState,
 ) {
     LazyColumn(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        state = lazyListState,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(8.dp)
     ) {
-        item {
+//        item {
+//            ItemWidget(
+//                viewModel = viewModel,
+//                app = null
+//            )
+//        }
+        items(viewModel.state.checkedApps, key = { it.packageName }) {
+            var alpha by remember {
+                mutableStateOf(0f)
+            }
             ItemWidget(
-                viewModel = viewModel,
-                app = null
-            )
-        }
-        items(viewModel.state.apps.data) {
-            ItemWidget(
+                modifier = Modifier
+                    .animateItemPlacement()
+                    .graphicsLayer(
+                        alpha = animateFloatAsState(
+                            targetValue = alpha,
+                            animationSpec = spring(stiffness = 100f)
+                        ).value
+                    ),
                 viewModel = viewModel,
                 app = it
             )
+            SideEffect {
+                alpha = 1f
+            }
         }
     }
 }
 
 @Composable
 fun ItemWidget(
+    modifier: Modifier = Modifier,
     viewModel: ApplyViewModel,
-    app: ApplyViewAppInfo?,
+    app: ApplyViewApp,
 ) {
     val applied =
-        viewModel.state.appEntities.data.find { it.packageName == app?.packageName } != null
+        viewModel.state.appEntities.data.find { it.packageName == app.packageName } != null
     Box(
-        modifier = Modifier
-            .fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp)),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable {
-                    viewModel.dispatch(
-                        ApplyViewAction.ApplyPackageName(
-                            app?.packageName,
-                            !applied
+                .clickable(
+                    onClick = {
+                        viewModel.dispatch(
+                            ApplyViewAction.ApplyPackageName(
+                                app.packageName, !applied
+                            )
                         )
+                    },
+                    interactionSource = remember {
+                        MutableInteractionSource()
+                    },
+                    indication = rememberRipple(
+                        color = MaterialTheme.colorScheme.primary
                     )
-                }
+                )
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            AsyncImage(
-                model = app?.icon,
+            val packageManager = LocalContext.current.packageManager
+            val scope = rememberCoroutineScope()
+            var icon by remember {
+                mutableStateOf(viewModel.defaultIcon)
+            }
+            SideEffect {
+                scope.launch(Dispatchers.IO) {
+                    icon = packageManager.getApplicationIcon(app.packageName)
+                }
+            }
+            Image(
+                painter = rememberDrawablePainter(icon),
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(40.dp)
                     .align(Alignment.CenterVertically),
-                contentDescription = app?.label
+                contentDescription = null
             )
             Column(
                 modifier = Modifier
                     .align(Alignment.CenterVertically)
                     .weight(1f)
             ) {
-                if (app != null) {
+                Text(
+                    text = app.label ?: app.packageName ?: stringResource(R.string.global),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                AnimatedVisibility(viewModel.state.showPackageName) {
                     Text(
-                        text = app.label ?: app.packageName,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = app.packageName,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Text(
-                        text = "${app.versionName} (${app.versionCode})",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                } else {
-                    Text(
-                        text = stringResource(id = R.string.global),
-                        style = MaterialTheme.typography.titleMedium
+                        app.packageName, style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
-            Checkbox(
-                modifier = Modifier
-                    .align(Alignment.CenterVertically),
+            Switch(modifier = Modifier.align(Alignment.CenterVertically),
                 checked = applied,
                 onCheckedChange = {
                     viewModel.dispatch(
                         ApplyViewAction.ApplyPackageName(
-                            app?.packageName,
-                            it
+                            app.packageName, it
                         )
                     )
-                }
-            )
+                })
         }
+    }
+}
+
+@Composable
+private fun BottomSheetContent(viewModel: ApplyViewModel) {
+    Box(modifier = Modifier.fillMaxWidth()) {
+        CompositionLocalProvider(LocalContentColor provides AlertDialogDefaults.titleContentColor) {
+            ProvideTextStyle(MaterialTheme.typography.headlineSmall) {
+                Text(stringResource(R.string.options), modifier = Modifier.align(Alignment.Center))
+            }
+        }
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        OrderWidget(viewModel)
+        ChipsWidget(viewModel)
+    }
+}
+
+@Composable
+private fun LabelWidget(text: String) {
+    CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.titleMedium) {
+        Text(text)
+    }
+}
+
+@Composable
+private fun OrderWidget(viewModel: ApplyViewModel) {
+    LabelWidget(stringResource(R.string.sort))
+
+    data class OrderData(val label: String, val type: ApplyViewState.OrderType)
+
+    val map = listOf(
+        OrderData("名称", ApplyViewState.OrderType.Label),
+        OrderData("包名", ApplyViewState.OrderType.PackageName),
+        OrderData("安装时间", ApplyViewState.OrderType.FirstInstallTime)
+    )
+
+    val selectedIndex = map.map { it.type }.indexOf(viewModel.state.orderType)
+    ToggleRow(selectedIndex = selectedIndex) {
+        val a = mutableListOf<String>()
+        map.forEachIndexed { index, value ->
+            Toggle(selected = selectedIndex == index, onSelected = {
+                viewModel.dispatch(ApplyViewAction.Order(value.type))
+            }) {
+                Text(value.label)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ChipsWidget(viewModel: ApplyViewModel) {
+    LabelWidget(stringResource(R.string.more))
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        val orderInReverse = viewModel.state.orderInReverse
+        val selectedFirst = viewModel.state.selectedFirst
+        val showSystemApp = viewModel.state.showSystemApp
+        val showPackageName = viewModel.state.showPackageName
+        Chip(
+            selected = orderInReverse,
+            label = "排序倒序",
+            icon = Icons.TwoTone.Sort,
+            onClick = { viewModel.dispatch(ApplyViewAction.OrderInReverse(!orderInReverse)) }
+        )
+        Chip(
+            selected = selectedFirst,
+            label = "选中优先",
+            icon = Icons.TwoTone.LibraryAddCheck,
+            onClick = { viewModel.dispatch(ApplyViewAction.SelectedFirst(!selectedFirst)) }
+        )
+        Chip(
+            selected = showSystemApp,
+            label = "显示系统应用",
+            icon = Icons.TwoTone.Shield,
+            onClick = { viewModel.dispatch(ApplyViewAction.ShowSystemApp(!showSystemApp)) }
+        )
+        Chip(
+            selected = showPackageName,
+            label = "显示包名",
+            icon = Icons.TwoTone.Visibility,
+            onClick = { viewModel.dispatch(ApplyViewAction.ShowPackageName(!showPackageName)) }
+        )
     }
 }

@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,8 +14,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -22,7 +24,8 @@ import androidx.compose.material.icons.twotone.Add
 import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Edit
 import androidx.compose.material.icons.twotone.Rule
-import androidx.compose.material3.Card
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -32,6 +35,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -40,6 +44,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -72,6 +77,7 @@ fun AllPage(
 ) {
     LaunchedEffect(true) {
         viewModel.dispatch(AllViewAction.Init)
+        viewModel.navController = navController
     }
 
     val showFloatingState = remember {
@@ -147,6 +153,7 @@ fun AllPage(
                         text = stringResource(id = R.string.loading)
                     )
                 }
+
                 viewModel.state.data.progress is AllViewState.Data.Progress.Loaded
                         && viewModel.state.data.configs.isEmpty() -> {
                     LottieWidget(
@@ -154,6 +161,7 @@ fun AllPage(
                         text = stringResource(id = R.string.empty_configs)
                     )
                 }
+
                 else -> {
                     ShowDataWidget(
                         viewModel = viewModel,
@@ -199,13 +207,17 @@ fun LottieWidget(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ShowDataWidget(
     viewModel: AllViewModel,
 ) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize(),
+    LazyVerticalStaggeredGrid(
+        modifier = Modifier.fillMaxSize(),
+        columns = StaggeredGridCells.Adaptive(350.dp),
+        contentPadding = PaddingValues(16.dp),
+        verticalItemSpacing = 16.dp,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(viewModel.state.data.configs) {
             DataItemWidget(viewModel, it)
@@ -218,44 +230,54 @@ fun DataItemWidget(
     viewModel: AllViewModel,
     entity: ConfigEntity
 ) {
-    Card(
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(
-                vertical = 8.dp,
-                horizontal = 16.dp,
-            )
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.padding(vertical = 16.dp, horizontal = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = entity.name,
-                style = MaterialTheme.typography.titleMedium
-            )
-            if (entity.description.isNotEmpty()) {
+            Column {
                 Text(
-                    text = entity.description,
-                    style = MaterialTheme.typography.bodyMedium
+                    text = entity.name,
+                    style = MaterialTheme.typography.titleMedium
                 )
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                IconButton(onClick = { viewModel.dispatch(AllViewAction.DeleteDataConfig(entity)) }) {
-                    Icon(
-                        imageVector = Icons.TwoTone.Delete,
-                        contentDescription = stringResource(id = R.string.delete)
+                if (entity.description.isNotEmpty()) {
+                    Text(
+                        text = entity.description,
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
+            }
+        }
+        Divider(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .align(Alignment.CenterVertically),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 IconButton(onClick = { viewModel.dispatch(AllViewAction.EditDataConfig(entity)) }) {
                     Icon(
                         imageVector = Icons.TwoTone.Edit,
                         contentDescription = stringResource(id = R.string.edit)
+                    )
+                }
+                IconButton(onClick = { viewModel.dispatch(AllViewAction.DeleteDataConfig(entity)) }) {
+                    Icon(
+                        imageVector = Icons.TwoTone.Delete,
+                        contentDescription = stringResource(id = R.string.delete)
                     )
                 }
                 IconButton(onClick = {
@@ -266,6 +288,21 @@ fun DataItemWidget(
                         contentDescription = stringResource(id = R.string.apply)
                     )
                 }
+            }
+            Row(
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                var enabled by remember {
+                    mutableStateOf(false)
+                }
+                Switch(
+                    checked = enabled,
+                    onCheckedChange = { enabled = !enabled }
+                )
             }
         }
     }
