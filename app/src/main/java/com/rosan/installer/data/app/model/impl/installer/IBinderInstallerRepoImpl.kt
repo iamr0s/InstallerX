@@ -17,6 +17,7 @@ import android.os.IInterface
 import android.os.Parcel
 import android.os.ServiceManager
 import com.rosan.dhizuku.shared.DhizukuVariables
+import com.rosan.installer.BuildConfig
 import com.rosan.installer.data.app.model.entity.InstallEntity
 import com.rosan.installer.data.app.model.entity.InstallExtraEntity
 import com.rosan.installer.data.app.repo.InstallerRepo
@@ -33,14 +34,17 @@ import kotlinx.coroutines.launch
 import okhttp3.internal.closeQuietly
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
+import org.koin.core.component.inject
 import java.lang.reflect.Field
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 
 abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
-    protected val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val context by inject<Context>()
 
-    protected val reflect = get<ReflectRepo>()
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+
+    private val reflect = get<ReflectRepo>()
 
     protected abstract suspend fun iBinderWrapper(iBinder: IBinder): IBinder
 
@@ -67,9 +71,11 @@ abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
         val iPackageInstaller =
             IPackageInstaller.Stub.asInterface(iBinderWrapper(iPackageManager.packageInstaller.asBinder()))
 
-        var installerPackageName = config.installer
-        if (config.authorizer == ConfigEntity.Authorizer.Dhizuku) installerPackageName =
-            DhizukuVariables.PACKAGE_NAME
+        val installerPackageName = when (config.authorizer) {
+            ConfigEntity.Authorizer.Dhizuku -> DhizukuVariables.PACKAGE_NAME
+            ConfigEntity.Authorizer.None -> BuildConfig.APPLICATION_ID
+            else -> config.installer
+        }
 
         return (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             reflect.getDeclaredConstructor(
@@ -134,13 +140,17 @@ abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
         packageName: String
     ) {
         if (entities.isEmpty()) return
+        val packageInstaller = getPackageInstaller(config, entities, extra)
         var session: Session? = null
         try {
-            session = createSession(config, entities, extra, packageName)
+            session = createSession(config, entities, extra, packageInstaller, packageName)
             installIts(config, entities, extra, session)
             commit(config, entities, extra, session)
         } finally {
-            session?.closeQuietly()
+            session?.run {
+                abandon()
+                closeQuietly()
+            }
         }
     }
 
@@ -148,9 +158,9 @@ abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
         config: ConfigEntity,
         entities: List<InstallEntity>,
         extra: InstallExtraEntity,
+        packageInstaller: PackageInstaller,
         packageName: String
     ): Session {
-        val packageInstaller = getPackageInstaller(config, entities, extra)
         val params = PackageInstaller.SessionParams(
             when (entities.count { it.name == "base.apk" }) {
                 1 -> PackageInstaller.SessionParams.MODE_FULL_INSTALL
@@ -205,8 +215,7 @@ abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
     ) {
         val receiver = LocalIntentReceiver()
         session.commit(receiver.getIntentSender())
-        val result = receiver.getResult()
-        PackageManagerUtil.installResultVerify(result)
+        PackageManagerUtil.installResultVerify(context, receiver)
     }
 
     open suspend fun doFinishWork(
@@ -229,7 +238,15 @@ abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
         entities: List<InstallEntity>,
         extra: InstallExtraEntity
     ) {
-        useUserService(config) {
+        fun special() = null
+        val authorizer = config.authorizer
+
+        useUserService(
+            config, if (authorizer == ConfigEntity.Authorizer.None
+                || authorizer == ConfigEntity.Authorizer.Dhizuku
+            ) ::special
+            else null
+        ) {
             it.privileged.delete(entities.sourcePath())
         }
     }
@@ -237,7 +254,7 @@ abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
     class LocalIntentReceiver : KoinComponent {
         private val reflect = get<ReflectRepo>()
 
-        private val result = LinkedBlockingQueue<Intent>()
+        private val queue = LinkedBlockingQueue<Intent>(1)
 
         private val localSender = object : IIntentSender.Stub() {
             // this api only work for upper Android O (8.0)
@@ -253,7 +270,7 @@ abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
                 requiredPermission: String?,
                 options: Bundle?
             ) {
-                result.offer(intent, 5, TimeUnit.SECONDS)
+                queue.offer(intent, 5, TimeUnit.SECONDS)
             }
 
             fun send(
@@ -308,7 +325,9 @@ abstract class IBinderInstallerRepoImpl : InstallerRepo, KoinComponent {
 
         fun getResult(): Intent {
             return try {
-                result.take()
+                val result = queue.take()
+                queue.remove(result)
+                result
             } catch (e: InterruptedException) {
                 throw RuntimeException(e)
             }

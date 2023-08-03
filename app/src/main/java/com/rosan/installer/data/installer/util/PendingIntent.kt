@@ -13,10 +13,10 @@ fun Intent.pendingBroadcast(
     context: Context,
     requestCode: Int,
     flags: Int = defaultFlags
-): PendingIntent = PendingIntent.getBroadcast(context, requestCode, this, defaultFlags)
+): PendingIntent = PendingIntent.getBroadcast(context, requestCode, this, flags)
 
 fun Intent.pendingActivity(
     context: Context,
     requestCode: Int,
     flags: Int = defaultFlags
-): PendingIntent = PendingIntent.getActivity(context, requestCode, this, defaultFlags)
+): PendingIntent = PendingIntent.getActivity(context, requestCode, this, flags)

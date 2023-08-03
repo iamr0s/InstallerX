@@ -4,10 +4,8 @@ import android.os.IBinder
 import com.rosan.app_process.AppProcess
 import com.rosan.installer.data.app.model.entity.InstallEntity
 import com.rosan.installer.data.app.model.entity.InstallExtraEntity
-import com.rosan.installer.data.app.util.sourcePath
 import com.rosan.installer.data.recycle.model.impl.AppProcessRecyclers
 import com.rosan.installer.data.recycle.repo.Recyclable
-import com.rosan.installer.data.recycle.util.useUserService
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
 
 object ProcessInstallerRepoImpl : IBinderInstallerRepoImpl() {
@@ -17,8 +15,11 @@ object ProcessInstallerRepoImpl : IBinderInstallerRepoImpl() {
         config: ConfigEntity, entities: List<InstallEntity>, extra: InstallExtraEntity
     ) {
         recycler = AppProcessRecyclers.get(
-            if (config.authorizer == ConfigEntity.Authorizer.Root) "su"
-            else config.customizeAuthorizer
+            when (config.authorizer) {
+                ConfigEntity.Authorizer.Root -> "su"
+                ConfigEntity.Authorizer.Customize -> config.customizeAuthorizer
+                else -> "sh"
+            }
         ).make()
         super.doWork(config, entities, extra)
     }

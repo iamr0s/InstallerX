@@ -1,7 +1,9 @@
 package com.rosan.installer.data.app.util
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInstaller
+import androidx.core.content.IntentCompat
 import com.rosan.installer.data.app.model.exception.InstallFailedAlreadyExistsException
 import com.rosan.installer.data.app.model.exception.InstallFailedConflictingProviderException
 import com.rosan.installer.data.app.model.exception.InstallFailedContainerErrorException
@@ -27,6 +29,7 @@ import com.rosan.installer.data.app.model.exception.InstallFailedUpdateIncompati
 import com.rosan.installer.data.app.model.exception.InstallFailedVerificationFailureException
 import com.rosan.installer.data.app.model.exception.InstallFailedVerificationTimeoutException
 import com.rosan.installer.data.app.model.exception.InstallFailedVersionDowngradeException
+import com.rosan.installer.data.app.model.impl.installer.IBinderInstallerRepoImpl
 
 class PackageManagerUtil {
     companion object {
@@ -80,15 +83,28 @@ class PackageManagerUtil {
 
         const val INSTALL_FAILED_VERSION_DOWNGRADE = -25
 
-        fun installResultVerify(intent: Intent) {
+        fun installResultVerify(
+            context: Context,
+            receiver: IBinderInstallerRepoImpl.LocalIntentReceiver
+        ) {
+            val intent = receiver.getResult()
             val status =
                 intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+            val action =
+                IntentCompat.getParcelableExtra(intent, Intent.EXTRA_INTENT, Intent::class.java)
+            if (status == PackageInstaller.STATUS_PENDING_USER_ACTION
+                && action != null
+            ) {
+                context.startActivity(action.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                installResultVerify(context, receiver)
+                return
+            }
             if (status == PackageInstaller.STATUS_SUCCESS) return
             val legacyStatus = intent.getIntExtra(
                 PackageInstallerUtil.EXTRA_LEGACY_STATUS, PackageInstaller.STATUS_FAILURE
             )
             val msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
-            val ecpMsg = "Install Failure $status [$msg]"
+            val ecpMsg = "Install Failure $status#$legacyStatus [$msg]"
             throw when (legacyStatus) {
                 INSTALL_FAILED_ALREADY_EXISTS -> InstallFailedAlreadyExistsException(ecpMsg)
                 INSTALL_FAILED_INVALID_APK -> InstallFailedInvalidAPKException(ecpMsg)
