@@ -18,8 +18,10 @@ import com.rosan.installer.data.installer.model.entity.ProgressEntity
 import com.rosan.installer.data.installer.model.entity.SelectInstallEntity
 import com.rosan.installer.data.installer.model.exception.ResolveException
 import com.rosan.installer.data.installer.model.impl.InstallerRepoImpl
+import com.rosan.installer.data.installer.repo.InstallerRepo
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
 import com.rosan.installer.data.settings.util.ConfigUtil
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
@@ -29,23 +31,25 @@ import okhttp3.internal.closeQuietly
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File
+import java.util.UUID
 
-class ActionHandler(
-    worker: InstallerRepoImpl.MyWorker
-) : Handler(worker), KoinComponent {
+class ActionHandler(scope: CoroutineScope, installer: InstallerRepo) :
+    Handler(scope, installer), KoinComponent {
+    override val installer: InstallerRepoImpl = super.installer as InstallerRepoImpl
+
     private var job: Job? = null
 
     private val context by inject<Context>()
 
     private val cacheParcelFileDescriptors = mutableListOf<ParcelFileDescriptor>()
 
-    private val cacheDirectory = "${context.externalCacheDir?.absolutePath}"
-
-    private val cacheFiles = mutableListOf<String>()
+    private val cacheDirectory = "${context.externalCacheDir?.absolutePath}/${installer.id}".apply {
+        File(this).mkdirs()
+    }
 
     override suspend fun onStart() {
-        job = worker.scope.launch {
-            worker.impl.action.collect {
+        job = scope.launch {
+            installer.action.collect {
                 // 异步处理请求
                 launch {
                     when (it) {
@@ -64,37 +68,34 @@ class ActionHandler(
             it.closeQuietly()
         }
         cacheParcelFileDescriptors.clear()
-        cacheFiles.forEach {
-            File(it).delete()
-        }
-        cacheFiles.clear()
+        File(cacheDirectory).deleteRecursively()
         job?.cancel()
     }
 
     private suspend fun resolve(activity: Activity) {
-        worker.impl.progress.emit(ProgressEntity.Resolving)
+        installer.progress.emit(ProgressEntity.Resolving)
         kotlin.runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requestNotificationPermission(
                 activity
             )
-            worker.impl.config = resolveConfig(activity)
+            installer.config = resolveConfig(activity)
         }.getOrElse {
-            worker.impl.error = it
-            worker.impl.progress.emit(ProgressEntity.ResolvedFailed)
+            installer.error = it
+            installer.progress.emit(ProgressEntity.ResolvedFailed)
             return
         }
-        if (worker.impl.config.installMode == ConfigEntity.InstallMode.Ignore) {
-            worker.impl.progress.emit(ProgressEntity.Finish)
+        if (installer.config.installMode == ConfigEntity.InstallMode.Ignore) {
+            installer.progress.emit(ProgressEntity.Finish)
             return
         }
-        worker.impl.data = kotlin.runCatching {
+        installer.data = kotlin.runCatching {
             resolveData(activity)
         }.getOrElse {
-            worker.impl.error = it
-            worker.impl.progress.emit(ProgressEntity.ResolvedFailed)
+            installer.error = it
+            installer.progress.emit(ProgressEntity.ResolvedFailed)
             return
         }
-        worker.impl.progress.emit(ProgressEntity.ResolveSuccess)
+        installer.progress.emit(ProgressEntity.ResolveSuccess)
     }
 
     private suspend fun resolveConfig(activity: Activity): ConfigEntity {
@@ -203,7 +204,6 @@ class ActionHandler(
         uri: Uri,
         retry: Int = 3
     ): List<DataEntity> {
-        val retry = retry - 1
         // wait for PermissionRecords ok.
         // if not, maybe show Uri Read Permission Denied
         if (activity.checkCallingOrSelfUriPermission(
@@ -219,7 +219,6 @@ class ActionHandler(
         val parcelFileDescriptor = assetFileDescriptor.parcelFileDescriptor
         val pid = Os.getpid()
         val descriptor = parcelFileDescriptor.fd
-//        val path = "/proc/$pid/task/${Os.gettid()}/fd/$descriptor"
         val path = "/proc/$pid/fd/$descriptor"
 
         // only full file, can't handle a sub-section of a file
@@ -241,22 +240,22 @@ class ActionHandler(
         }
 
         // cache it
-        val tempFile = File.createTempFile(worker.impl.id, null, File(cacheDirectory))
-        tempFile.outputStream().use {
-            assetFileDescriptor.createInputStream().copyTo(it)
+        val tempFile = File.createTempFile(UUID.randomUUID().toString(), null, File(cacheDirectory))
+        tempFile.outputStream().use { output ->
+            assetFileDescriptor.use {
+                it.createInputStream().copyTo(output)
+            }
         }
-        assetFileDescriptor.closeQuietly()
-        cacheFiles.add(tempFile.absolutePath)
         return listOf(DataEntity.FileEntity(tempFile.absolutePath))
     }
 
     private suspend fun analyse() {
-        worker.impl.progress.emit(ProgressEntity.Analysing)
-        worker.impl.entities = kotlin.runCatching {
-            analyseEntities(worker.impl.data)
+        installer.progress.emit(ProgressEntity.Analysing)
+        installer.entities = kotlin.runCatching {
+            analyseEntities(installer.data)
         }.getOrElse {
-            worker.impl.error = it
-            worker.impl.progress.emit(ProgressEntity.AnalysedFailed)
+            installer.error = it
+            installer.progress.emit(ProgressEntity.AnalysedFailed)
             return
         }.sortedWith(compareBy({
             it.packageName
@@ -271,16 +270,16 @@ class ActionHandler(
                 app = it, selected = true
             )
         }
-        worker.impl.progress.emit(ProgressEntity.AnalysedSuccess)
+        installer.progress.emit(ProgressEntity.AnalysedSuccess)
     }
 
     private suspend fun analyseEntities(data: List<DataEntity>): List<AppEntity> =
-        AnalyserRepoImpl().doWork(worker.impl.config, data)
+        AnalyserRepoImpl.doWork(installer.config, data, AnalyseExtraEntity(cacheDirectory))
 
     private suspend fun install() {
-        worker.impl.progress.emit(ProgressEntity.Installing)
+        installer.progress.emit(ProgressEntity.Installing)
         kotlin.runCatching {
-            installEntities(worker.impl.config, worker.impl.entities.filter { it.selected }.map {
+            installEntities(installer.config, installer.entities.filter { it.selected }.map {
                 InstallEntity(
                     name = it.app.name,
                     packageName = it.app.packageName,
@@ -290,23 +289,18 @@ class ActionHandler(
                         is AppEntity.DexMetadataEntity -> app.data
                     }
                 )
-            }, InstallExtraEntity(Os.getuid() / 100000)
-            )
+            }, InstallExtraEntity(Os.getuid() / 100000, cacheDirectory))
         }.getOrElse {
-            worker.impl.error = it
-            worker.impl.progress.emit(ProgressEntity.InstallFailed)
+            installer.error = it
+            installer.progress.emit(ProgressEntity.InstallFailed)
             return
         }
-        worker.impl.progress.emit(ProgressEntity.InstallSuccess)
+        installer.progress.emit(ProgressEntity.InstallSuccess)
     }
 
     private suspend fun installEntities(
         config: ConfigEntity, entities: List<InstallEntity>, extra: InstallExtraEntity
-    ) = com.rosan.installer.data.app.model.impl.InstallerRepoImpl.doWork(
-        config, entities, extra
-    )
+    ) = com.rosan.installer.data.app.model.impl.InstallerRepoImpl.doWork(config, entities, extra)
 
-    private suspend fun finish() {
-        worker.impl.progress.emit(ProgressEntity.Finish)
-    }
+    private suspend fun finish() = installer.progress.emit(ProgressEntity.Finish)
 }

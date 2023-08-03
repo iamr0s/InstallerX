@@ -7,6 +7,7 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.core.content.res.ResourcesCompat
+import com.rosan.installer.data.app.model.entity.AnalyseExtraEntity
 import com.rosan.installer.data.app.model.entity.AppEntity
 import com.rosan.installer.data.app.model.entity.DataEntity
 import com.rosan.installer.data.app.repo.AnalyserRepo
@@ -18,10 +19,14 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import java.io.FileDescriptor
 
-class ApkAnalyserRepoImpl : AnalyserRepo, KoinComponent {
+object ApkAnalyserRepoImpl : AnalyserRepo, KoinComponent {
     private val reflect = get<ReflectRepo>()
 
-    override suspend fun doWork(config: ConfigEntity, data: List<DataEntity>): List<AppEntity> {
+    override suspend fun doWork(
+        config: ConfigEntity,
+        data: List<DataEntity>,
+        extra: AnalyseExtraEntity
+    ): List<AppEntity> {
         val apps = mutableListOf<AppEntity>()
         data.forEach { apps.addAll(doWork(config, it)) }
         return apps

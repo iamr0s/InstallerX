@@ -20,7 +20,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 class AllViewModel(
-    private val navController: NavController,
+    var navController: NavController,
     private val repo: ConfigRepo,
 ) : ViewModel(), KoinComponent {
     val context by inject<Context>()

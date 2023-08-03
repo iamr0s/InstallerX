@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 enum class DataType {
     AUTO,
     APK,
+    APKS,
     APKM,
     XAPK
 }

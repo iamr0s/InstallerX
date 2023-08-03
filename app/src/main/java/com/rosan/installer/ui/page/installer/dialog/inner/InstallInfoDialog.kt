@@ -74,7 +74,8 @@ fun InstallInfoDialog(
                     .align(Alignment.CenterEnd)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer)
-                    .size(24.dp), colors = IconButtonDefaults.iconButtonColors(
+                    .size(24.dp),
+                colors = IconButtonDefaults.iconButtonColors(
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ), onClick = onTitleExtraClick
             ) {

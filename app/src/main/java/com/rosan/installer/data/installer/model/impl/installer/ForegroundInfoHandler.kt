@@ -2,83 +2,135 @@ package com.rosan.installer.data.installer.model.impl.installer
 
 import android.app.Notification
 import android.content.Context
-import android.os.Build
-import androidx.annotation.RequiresApi
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.graphics.drawable.toBitmapOrNull
-import androidx.work.ForegroundInfo
 import com.rosan.installer.R
 import com.rosan.installer.data.app.util.getInfo
 import com.rosan.installer.data.installer.model.entity.ProgressEntity
-import com.rosan.installer.data.installer.model.impl.InstallerRepoImpl
+import com.rosan.installer.data.installer.repo.InstallerRepo
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class ForegroundInfoHandler(
-    worker: InstallerRepoImpl.MyWorker
-) : Handler(worker), KoinComponent {
-    companion object {
-        private const val InstallerChannel = "installer_channel"
+class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerRepo) :
+    Handler(scope, installer), KoinComponent {
+    enum class Channel(val value: String) {
+        InstallerChannel("installer_channel"), InstallerProgressChannel("installer_progress_channel")
+    }
 
-        private const val InstallerBackgroundChannel = "installer_background_channel"
-
-        private val WorkingIcon = R.drawable.round_hourglass_empty_black_24
-
-        private val PausingIcon = R.drawable.round_hourglass_disabled_black_24
+    enum class Icon(@DrawableRes val resId: Int) {
+        Working(R.drawable.round_hourglass_empty_black_24), Pausing(R.drawable.round_hourglass_disabled_black_24)
     }
 
     private var job: Job? = null
 
     private val context by inject<Context>()
 
-    private val notificationId = worker.impl.id.hashCode() and Int.MAX_VALUE
+    private val notificationManager = NotificationManagerCompat.from(context)
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    private val notificationChannel: NotificationChannelCompat = NotificationChannelCompat
-        .Builder(InstallerChannel, NotificationManagerCompat.IMPORTANCE_MAX)
-        .setName(context.getString(R.string.installer_channel_name))
-        .build()
+    private val notificationId = installer.id.hashCode() and Int.MAX_VALUE
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    private val notificationBackgroundChannel: NotificationChannelCompat = NotificationChannelCompat
-        .Builder(InstallerBackgroundChannel, NotificationManagerCompat.IMPORTANCE_MIN)
-        .setName(context.getString(R.string.installer_background_channel_name))
-        .build()
+    private val notificationChannels = mapOf(
+        Channel.InstallerChannel to NotificationChannelCompat.Builder(
+            Channel.InstallerChannel.value, NotificationManagerCompat.IMPORTANCE_MAX
+        ).setName(getString(R.string.installer_channel_name)).build(),
+
+        Channel.InstallerProgressChannel to NotificationChannelCompat.Builder(
+            Channel.InstallerProgressChannel.value, NotificationManagerCompat.IMPORTANCE_MIN
+        ).setName(getString(R.string.installer_progress_channel_name)).build()
+    )
+
+    private val workingProgresses = listOf(
+        ProgressEntity.Ready,
+        ProgressEntity.Resolving,
+        ProgressEntity.ResolveSuccess,
+        ProgressEntity.Analysing,
+        ProgressEntity.AnalysedSuccess,
+        ProgressEntity.Installing,
+        ProgressEntity.InstallSuccess
+    )
+
+    private val importanceProgresses = listOf(
+        ProgressEntity.ResolvedFailed,
+        ProgressEntity.AnalysedFailed,
+        ProgressEntity.AnalysedSuccess,
+        ProgressEntity.InstallFailed,
+        ProgressEntity.InstallSuccess
+    )
+
+    private val installProgresses = mapOf(
+        ProgressEntity.Resolving to 0,
+        ProgressEntity.Analysing to 40,
+        ProgressEntity.Installing to 80
+    )
+
+    private fun newNotificationBuilder(
+        progress: ProgressEntity, background: Boolean
+    ): NotificationCompat.Builder {
+        val isWorking = workingProgresses.contains(progress)
+        val isImportance = importanceProgresses.contains(progress)
+
+        val channel =
+            notificationChannels[if (isImportance && background) Channel.InstallerChannel else Channel.InstallerProgressChannel]!!
+
+        notificationManager.createNotificationChannel(channel)
+
+        val icon = (if (isWorking) Icon.Working else Icon.Pausing).resId
+
+        var builder = NotificationCompat.Builder(context, channel.id).setSmallIcon(icon)
+            .setContentIntent(openIntent)
+            .setDeleteIntent(finishIntent)
+
+        installProgresses[progress]?.let {
+            builder = builder.setProgress(100, it, false)
+        }
+
+        return builder
+    }
+
+    private fun newNotification(
+        progress: ProgressEntity, background: Boolean
+    ): Notification? {
+        val builder = newNotificationBuilder(progress, background)
+        return when (progress) {
+            is ProgressEntity.Ready -> onReady(builder)
+            is ProgressEntity.Resolving -> onResolving(builder)
+            is ProgressEntity.ResolvedFailed -> onResolvedFailed(builder)
+            is ProgressEntity.ResolveSuccess -> onResolveSuccess(builder)
+            is ProgressEntity.Analysing -> onAnalysing(builder)
+            is ProgressEntity.AnalysedFailed -> onAnalysedFailed(builder)
+            is ProgressEntity.AnalysedSuccess -> onAnalysedSuccess(builder)
+            is ProgressEntity.Installing -> onInstalling(builder)
+            is ProgressEntity.InstallFailed -> onInstallFailed(builder)
+            is ProgressEntity.InstallSuccess -> onInstallSuccess(builder)
+            is ProgressEntity.Finish -> null
+            else -> onReady(builder)
+        }
+    }
 
     override suspend fun onStart() {
-        job = worker.scope.launch {
-            setForeground()
-            var enabled = false
-            var notification: Notification? = null
+        job = scope.launch {
+            var progress: ProgressEntity = ProgressEntity.Ready
+            var background = false
+            fun refresh() {
+                setNotification(newNotification(progress, background))
+            }
             launch {
-                worker.impl.progress.collect {
-                    notification = when (it) {
-                        is ProgressEntity.Ready -> onReady()
-                        is ProgressEntity.Resolving -> onResolving()
-                        is ProgressEntity.ResolvedFailed -> onResolvedFailed()
-                        is ProgressEntity.ResolveSuccess -> onResolveSuccess()
-                        is ProgressEntity.Analysing -> onAnalysing()
-                        is ProgressEntity.AnalysedFailed -> onAnalysedFailed()
-                        is ProgressEntity.AnalysedSuccess -> onAnalysedSuccess()
-                        is ProgressEntity.Installing -> onInstalling()
-                        is ProgressEntity.InstallFailed -> onInstallFailed()
-                        is ProgressEntity.InstallSuccess -> onInstallSuccess()
-                        is ProgressEntity.Finish -> null
-                        else -> onReady()
-                    }
-                    setNotification(notification)
-                    setNotification(if (enabled) notification else null)
+                installer.progress.collect {
+                    progress = it
+                    refresh()
                 }
             }
             launch {
-                worker.impl.background.collect {
-                    enabled = it
-                    setNotification(if (enabled) notification else null)
+                installer.background.collect {
+                    background = it
+                    refresh()
                 }
             }
         }
@@ -92,174 +144,97 @@ class ForegroundInfoHandler(
     private fun getString(@StringRes resId: Int): String = context.getString(resId)
 
     private fun setNotification(notification: Notification? = null) {
-        val manager = NotificationManagerCompat.from(context)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) manager.createNotificationChannel(
-            notificationChannel
-        )
         if (notification == null) {
-            manager.cancel(notificationId)
+            notificationManager.cancel(notificationId)
             return
         }
-        manager.notify(notificationId, notification)
+        notificationManager.notify(notificationId, notification)
     }
 
-    private fun setForeground() {
-        val manager = NotificationManagerCompat.from(context)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) manager.createNotificationChannel(
-            notificationBackgroundChannel
-        )
-        val notification = NotificationCompat.Builder(context, InstallerBackgroundChannel)
-            .setSmallIcon(WorkingIcon)
-            .setContentTitle(getString(R.string.installer_running))
-            .build()
-        worker.setForegroundAsync(
-            ForegroundInfo(1, notification)
-        )
-    }
-
-    private val openIntent =
-        BroadcastHandler.openPendingIntent(context, worker)
+    private val openIntent = BroadcastHandler.openIntent(context, installer)
 
     private val analyseIntent =
-        BroadcastHandler.analysePendingIntent(context, worker)
+        BroadcastHandler.namedIntent(context, installer, BroadcastHandler.Name.Analyse)
 
     private val installIntent =
-        BroadcastHandler.installPendingIntent(context, worker)
+        BroadcastHandler.namedIntent(context, installer, BroadcastHandler.Name.Install)
 
     private val finishIntent =
-        BroadcastHandler.finishPendingIntent(context, worker)
+        BroadcastHandler.namedIntent(context, installer, BroadcastHandler.Name.Finish)
 
-    private val launchIntent =
-        BroadcastHandler.launchPendingIntent(context, worker)
+    private fun onReady(builder: NotificationCompat.Builder) =
+        builder.setContentTitle(getString(R.string.installer_ready))
+            .addAction(0, getString(R.string.cancel), finishIntent).build()
 
-    private fun onReady(): Notification {
-        return NotificationCompat.Builder(context, InstallerChannel)
-            .setContentIntent(openIntent)
-            .setSmallIcon(WorkingIcon)
-            .setContentTitle(getString(R.string.installer_ready))
-            .addAction(0, getString(R.string.cancel), finishIntent)
-            .setDeleteIntent(finishIntent)
-            .build()
-    }
+    private fun onResolving(builder: NotificationCompat.Builder) =
+        builder.setContentTitle(getString(R.string.installer_resolving))
+            .addAction(0, getString(R.string.cancel), finishIntent).build()
 
-    private fun onResolving(): Notification {
-        return NotificationCompat.Builder(context, InstallerChannel)
-            .setContentIntent(openIntent)
-            .setSmallIcon(WorkingIcon)
-            .setContentTitle(getString(R.string.installer_resolving))
-            .addAction(0, getString(R.string.cancel), finishIntent)
-            .setDeleteIntent(finishIntent)
-            .build()
-    }
+    private fun onResolvedFailed(builder: NotificationCompat.Builder) =
+        builder.setContentTitle(getString(R.string.installer_resolve_failed))
+            .addAction(0, getString(R.string.cancel), finishIntent).build()
 
-    private fun onResolvedFailed(): Notification {
-        return NotificationCompat.Builder(context, InstallerChannel)
-            .setContentIntent(openIntent)
-            .setSmallIcon(PausingIcon)
-            .setContentTitle(getString(R.string.installer_resolve_failed))
-            .addAction(0, getString(R.string.cancel), finishIntent)
-            .setDeleteIntent(finishIntent)
-            .build()
-    }
+    private fun onResolveSuccess(builder: NotificationCompat.Builder) =
+        builder.setContentTitle(getString(R.string.installer_resolve_success))
+            .addAction(0, getString(R.string.cancel), finishIntent).build()
 
-    private fun onResolveSuccess(): Notification {
-        return NotificationCompat.Builder(context, InstallerChannel)
-            .setContentIntent(openIntent)
-            .setSmallIcon(WorkingIcon)
-            .setContentTitle(getString(R.string.installer_resolve_success))
-            .addAction(0, getString(R.string.cancel), finishIntent)
-            .setDeleteIntent(finishIntent)
-            .build()
-    }
+    private fun onAnalysing(builder: NotificationCompat.Builder) =
+        builder.setContentTitle(getString(R.string.installer_analysing))
+            .addAction(0, getString(R.string.cancel), finishIntent).build()
 
-    private fun onAnalysing(): Notification {
-        return NotificationCompat.Builder(context, InstallerChannel)
-            .setContentIntent(openIntent)
-            .setSmallIcon(WorkingIcon)
-            .setContentTitle(getString(R.string.installer_analysing))
-            .addAction(0, getString(R.string.cancel), finishIntent)
-            .setDeleteIntent(finishIntent)
-            .build()
-    }
-
-    private fun onAnalysedFailed(): Notification {
-        return NotificationCompat.Builder(context, InstallerChannel)
-            .setContentIntent(openIntent)
-            .setSmallIcon(PausingIcon)
-            .setContentTitle(getString(R.string.installer_analyse_failed))
-            .addAction(0, getString(R.string.cancel), finishIntent)
+    private fun onAnalysedFailed(builder: NotificationCompat.Builder) =
+        builder.setContentTitle(getString(R.string.installer_analyse_failed))
             .addAction(0, getString(R.string.retry), analyseIntent)
-            .setDeleteIntent(finishIntent)
-            .build()
-    }
+            .addAction(0, getString(R.string.cancel), finishIntent).build()
 
-    private fun onAnalysedSuccess(): Notification {
-        return if (worker.impl.entities.count { it.selected } != 1)
-            NotificationCompat.Builder(context, InstallerChannel)
-                .setContentIntent(openIntent)
-                .setSmallIcon(WorkingIcon)
-                .setContentTitle(getString(R.string.installer_prepare_install))
-                .addAction(0, getString(R.string.cancel), finishIntent)
-                .setDeleteIntent(finishIntent)
-                .build()
+    private fun onAnalysedSuccess(builder: NotificationCompat.Builder): Notification {
+        val selected = installer.entities.filter { it.selected }
+        return (if (selected.groupBy { it.app.packageName }.size != 1) builder.setContentTitle(
+            getString(R.string.installer_prepare_install)
+        ).addAction(0, getString(R.string.cancel), finishIntent)
         else {
-            val info = worker.impl.entities.filter { it.selected }.map { it.app }.getInfo(context)
-            NotificationCompat.Builder(context, InstallerChannel)
-                .setContentIntent(openIntent)
-                .setSmallIcon(WorkingIcon)
-                .setContentTitle(info.title)
+            val info = selected.map { it.app }.getInfo(context)
+            builder.setContentTitle(info.title)
                 .setContentText(getString(R.string.installer_prepare_install_dsp))
                 .setLargeIcon(info.icon?.toBitmapOrNull())
                 .addAction(0, getString(R.string.install), installIntent)
                 .addAction(0, getString(R.string.cancel), finishIntent)
-                .setDeleteIntent(finishIntent)
-                .build()
-        }
+        }).build()
     }
 
-    private fun onInstalling(): Notification {
-        val info = worker.impl.entities.filter { it.selected }.map { it.app }.getInfo(context)
-        return NotificationCompat.Builder(context, InstallerChannel)
-            .setContentIntent(openIntent)
-            .setSmallIcon(WorkingIcon)
-            .setContentTitle(info.title)
+    private fun onInstalling(builder: NotificationCompat.Builder): Notification {
+        val info = installer.entities.filter { it.selected }.map { it.app }.getInfo(context)
+        return builder.setContentTitle(info.title)
             .setContentText(getString(R.string.installer_installing))
             .setLargeIcon(info.icon?.toBitmapOrNull())
-            .addAction(0, getString(R.string.cancel), finishIntent)
-            .setDeleteIntent(finishIntent)
-            .build()
+            .addAction(0, getString(R.string.cancel), finishIntent).build()
     }
 
-    private fun onInstallFailed(): Notification {
-        val info = worker.impl.entities.filter { it.selected }.map { it.app }.getInfo(context)
-        return NotificationCompat.Builder(context, InstallerChannel)
-            .setContentIntent(openIntent)
-            .setSmallIcon(PausingIcon)
-            .setContentTitle(info.title)
+    private fun onInstallFailed(builder: NotificationCompat.Builder): Notification {
+        val info = installer.entities.filter { it.selected }.map { it.app }.getInfo(context)
+        return builder.setContentTitle(info.title)
             .setContentText(getString(R.string.installer_install_failed))
             .setLargeIcon(info.icon?.toBitmapOrNull())
             .addAction(0, getString(R.string.retry), installIntent)
-            .addAction(0, getString(R.string.cancel), finishIntent)
-            .setDeleteIntent(finishIntent)
-            .build()
+            .addAction(0, getString(R.string.cancel), finishIntent).build()
     }
 
-    private fun onInstallSuccess(): Notification {
-        val entities = worker.impl.entities.filter { it.selected }.map { it.app }
+    private fun onInstallSuccess(builder: NotificationCompat.Builder): Notification {
+        val entities = installer.entities.filter { it.selected }.map { it.app }
         val info = entities.getInfo(context)
-        val intent = context.packageManager.getLaunchIntentForPackage(entities.first().packageName)
-        return NotificationCompat.Builder(context, InstallerChannel)
-            .setContentIntent(openIntent)
-            .setSmallIcon(WorkingIcon)
-            .setContentTitle(info.title)
+        val launchIntent =
+            context.packageManager.getLaunchIntentForPackage(entities.first().packageName)
+        val launchPendingIntent = launchIntent?.let {
+            BroadcastHandler.launchIntent(context, installer, it)
+        }
+
+        var newBuilder = builder.setContentTitle(info.title)
             .setContentText(getString(R.string.installer_install_success))
             .setLargeIcon(info.icon?.toBitmapOrNull())
+        if (launchIntent != null) newBuilder =
+            newBuilder.addAction(0, getString(R.string.open), launchPendingIntent)
+        return newBuilder
             .addAction(0, getString(R.string.finish), finishIntent)
-            .let {
-                if (intent != null) it.addAction(0, getString(R.string.open), launchIntent)
-                else it
-            }
-            .setDeleteIntent(finishIntent)
             .build()
     }
 }

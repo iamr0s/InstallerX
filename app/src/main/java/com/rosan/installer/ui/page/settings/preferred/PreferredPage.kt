@@ -69,6 +69,7 @@ fun PreferredPage(
             item { LabelWidget(stringResource(R.string.config)) }
             item { DataAuthorizerWidget(viewModel) }
             item { DataCustomizeAuthorizerWidget(viewModel) }
+            item { DataInstallModeWidget(viewModel) }
             item { LabelWidget(label = stringResource(id = R.string.basic)) }
             item { DefaultInstaller(snackBarHostState, true) }
             item { DefaultInstaller(snackBarHostState, false) }
@@ -90,15 +91,15 @@ fun openUrl(context: Context, url: String) {
 fun DataAuthorizerWidget(viewModel: PreferredViewModel) {
     val authorizer = viewModel.state.authorizer
     val data = mapOf(
-        ConfigEntity.Authorizer.None to stringResource(id = R.string.config_authorizer_none),
-        ConfigEntity.Authorizer.Root to stringResource(id = R.string.config_authorizer_root),
-        ConfigEntity.Authorizer.Shizuku to stringResource(id = R.string.config_authorizer_shizuku),
-        ConfigEntity.Authorizer.Dhizuku to stringResource(id = R.string.config_authorizer_dhizuku),
-        ConfigEntity.Authorizer.Customize to stringResource(id = R.string.config_authorizer_customize),
+        ConfigEntity.Authorizer.None to stringResource(R.string.config_authorizer_none),
+        ConfigEntity.Authorizer.Root to stringResource(R.string.config_authorizer_root),
+        ConfigEntity.Authorizer.Shizuku to stringResource(R.string.config_authorizer_shizuku),
+        ConfigEntity.Authorizer.Dhizuku to stringResource(R.string.config_authorizer_dhizuku),
+        ConfigEntity.Authorizer.Customize to stringResource(R.string.config_authorizer_customize),
     )
     DropDownMenuWidget(
         icon = Icons.TwoTone.Memory,
-        title = stringResource(id = R.string.config_authorizer),
+        title = stringResource(R.string.config_authorizer),
         description = if (data.containsKey(authorizer)) data[authorizer] else null,
         choice = data.keys.toList().indexOf(authorizer),
         data = data.values.toList(),
@@ -122,12 +123,35 @@ fun DataCustomizeAuthorizerWidget(viewModel: PreferredViewModel) {
             Icon(imageVector = Icons.TwoTone.Terminal, contentDescription = null)
         },
         label = {
-            Text(text = stringResource(id = R.string.config_customize_authorizer))
+            Text(stringResource(R.string.config_customize_authorizer))
         },
         value = customizeAuthorizer,
         onValueChange = { viewModel.dispatch(PreferredViewAction.ChangeGlobalCustomizeAuthorizer(it)) },
         maxLines = 8,
     )
+}
+
+@Composable
+fun DataInstallModeWidget(viewModel: PreferredViewModel) {
+    val installMode = viewModel.state.installMode
+    val data = mapOf(
+        ConfigEntity.InstallMode.Dialog to stringResource(R.string.config_install_mode_dialog),
+        ConfigEntity.InstallMode.AutoDialog to stringResource(R.string.config_install_mode_auto_dialog),
+        ConfigEntity.InstallMode.Notification to stringResource(R.string.config_install_mode_notification),
+        ConfigEntity.InstallMode.AutoNotification to stringResource(R.string.config_install_mode_auto_notification),
+        ConfigEntity.InstallMode.Ignore to stringResource(R.string.config_install_mode_ignore),
+    )
+    DropDownMenuWidget(
+        icon = Icons.TwoTone.Downloading,
+        title = stringResource(R.string.config_install_mode),
+        description = if (data.containsKey(installMode)) data[installMode] else null,
+        choice = data.keys.toList().indexOf(installMode),
+        data = data.values.toList(),
+    ) {
+        data.keys.toList().getOrNull(it)?.let {
+            viewModel.dispatch(PreferredViewAction.ChangeGlobalInstallMode(it))
+        }
+    }
 }
 
 @Composable

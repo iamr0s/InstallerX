@@ -77,6 +77,7 @@
     <string name="config_authorizer_customize">自定义</string>
     <string name="config_customize_authorizer">自定义授权器</string>
     <string name="config_install_mode">安装方式</string>
+    <string name="config_install_mode_global">跟随全局</string>
     <string name="config_install_mode_dialog">对话框</string>
     <string name="config_install_mode_auto_dialog">对话框自动</string>
     <string name="config_install_mode_notification">通知栏</string>
@@ -108,6 +109,9 @@
     <string name="clear">清除</string>
     <string name="global">全局</string>
 
+    <string name="options">选项</string>
+    <string name="sort">排序</string>
+
     <string name="name_separator">、</string>
 
     <string name="installer_resolve_error">入口动作：%s\n资源标识：%s</string>
@@ -128,6 +132,7 @@
     <string name="installer_install_success">安装成功</string>
 
     <string name="installer_channel_name">安装通知</string>
+    <string name="installer_progress_channel_name">安装过程通知</string>
     <string name="installer_background_channel_name">后台通知</string>
 
     <string name="installer_running">InstallerX 运行中</string>

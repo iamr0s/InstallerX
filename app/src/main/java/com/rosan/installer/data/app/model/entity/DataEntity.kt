@@ -22,13 +22,15 @@ sealed class DataEntity(open var source: DataEntity? = null) {
         override fun toString() = path
     }
 
-    class ZipFileEntity(val path: String, val name: String) : DataEntity() {
-        override fun getInputStream(): InputStream? = ZipFile(path).let {
+    class ZipFileEntity(val name: String, val parent: FileEntity) : DataEntity() {
+        override fun getInputStream(): InputStream? = ZipFile(parent.path).let {
             val entry = it.getEntry(name) ?: return@let null
             it.getInputStream(entry)
         }
 
-        override fun toString() = "$path!$name"
+        override var source: DataEntity? = parent.source?.let { ZipInputStreamEntity(name, it) }
+
+        override fun toString() = "$parent!$name"
     }
 
     class FileDescriptorEntity(val pid: Int, val descriptor: Int) : DataEntity() {
@@ -71,5 +73,9 @@ sealed class DataEntity(open var source: DataEntity? = null) {
             }
             return result
         }
+
+        override var source: DataEntity? = parent.source?.let { ZipInputStreamEntity(name, it) }
+
+        override fun toString(): String = "$parent!$name"
     }
 }

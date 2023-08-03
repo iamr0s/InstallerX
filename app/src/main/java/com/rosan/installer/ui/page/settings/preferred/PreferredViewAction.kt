@@ -9,4 +9,7 @@ sealed class PreferredViewAction {
 
     data class ChangeGlobalCustomizeAuthorizer(val customizeAuthorizer: String) :
         PreferredViewAction()
+
+    data class ChangeGlobalInstallMode(val installMode: ConfigEntity.InstallMode) :
+        PreferredViewAction()
 }

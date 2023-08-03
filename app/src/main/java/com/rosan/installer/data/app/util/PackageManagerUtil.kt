@@ -1,7 +1,35 @@
 package com.rosan.installer.data.app.util
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInstaller
+import androidx.core.content.IntentCompat
+import com.rosan.installer.data.app.model.exception.InstallFailedAlreadyExistsException
+import com.rosan.installer.data.app.model.exception.InstallFailedConflictingProviderException
+import com.rosan.installer.data.app.model.exception.InstallFailedContainerErrorException
+import com.rosan.installer.data.app.model.exception.InstallFailedCpuAbiIncompatibleException
+import com.rosan.installer.data.app.model.exception.InstallFailedDexoptException
+import com.rosan.installer.data.app.model.exception.InstallFailedDuplicatePackageException
+import com.rosan.installer.data.app.model.exception.InstallFailedInsufficientStorageException
+import com.rosan.installer.data.app.model.exception.InstallFailedInvalidAPKException
+import com.rosan.installer.data.app.model.exception.InstallFailedInvalidInstallLocationException
+import com.rosan.installer.data.app.model.exception.InstallFailedInvalidURIException
+import com.rosan.installer.data.app.model.exception.InstallFailedMediaUnavailableException
+import com.rosan.installer.data.app.model.exception.InstallFailedMissingFeatureException
+import com.rosan.installer.data.app.model.exception.InstallFailedMissingSharedLibraryException
+import com.rosan.installer.data.app.model.exception.InstallFailedNewerSDKException
+import com.rosan.installer.data.app.model.exception.InstallFailedNoSharedUserException
+import com.rosan.installer.data.app.model.exception.InstallFailedOlderSdkException
+import com.rosan.installer.data.app.model.exception.InstallFailedPackageChangedException
+import com.rosan.installer.data.app.model.exception.InstallFailedReplaceCouldntDeleteException
+import com.rosan.installer.data.app.model.exception.InstallFailedSharedUserIncompatibleException
+import com.rosan.installer.data.app.model.exception.InstallFailedTestOnlyException
+import com.rosan.installer.data.app.model.exception.InstallFailedUidChangedException
+import com.rosan.installer.data.app.model.exception.InstallFailedUpdateIncompatibleException
+import com.rosan.installer.data.app.model.exception.InstallFailedVerificationFailureException
+import com.rosan.installer.data.app.model.exception.InstallFailedVerificationTimeoutException
+import com.rosan.installer.data.app.model.exception.InstallFailedVersionDowngradeException
+import com.rosan.installer.data.app.model.impl.installer.IBinderInstallerRepoImpl
 
 class PackageManagerUtil {
     companion object {
@@ -55,91 +83,84 @@ class PackageManagerUtil {
 
         const val INSTALL_FAILED_VERSION_DOWNGRADE = -25
 
-        fun installResultVerify(intent: Intent) {
+        fun installResultVerify(
+            context: Context,
+            receiver: IBinderInstallerRepoImpl.LocalIntentReceiver
+        ) {
+            val intent = receiver.getResult()
             val status =
                 intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+            val action =
+                IntentCompat.getParcelableExtra(intent, Intent.EXTRA_INTENT, Intent::class.java)
+            if (status == PackageInstaller.STATUS_PENDING_USER_ACTION
+                && action != null
+            ) {
+                context.startActivity(action.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                installResultVerify(context, receiver)
+                return
+            }
             if (status == PackageInstaller.STATUS_SUCCESS) return
             val legacyStatus = intent.getIntExtra(
                 PackageInstallerUtil.EXTRA_LEGACY_STATUS, PackageInstaller.STATUS_FAILURE
             )
             val msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
-            val ecpMsg = "Install Failure $status [$msg]"
+            val ecpMsg = "Install Failure $status#$legacyStatus [$msg]"
             throw when (legacyStatus) {
-                INSTALL_FAILED_ALREADY_EXISTS -> com.rosan.installer.data.app.model.exception.InstallFailedAlreadyExistsException(
+                INSTALL_FAILED_ALREADY_EXISTS -> InstallFailedAlreadyExistsException(ecpMsg)
+                INSTALL_FAILED_INVALID_APK -> InstallFailedInvalidAPKException(ecpMsg)
+                INSTALL_FAILED_INVALID_URI -> InstallFailedInvalidURIException(ecpMsg)
+                INSTALL_FAILED_INSUFFICIENT_STORAGE -> InstallFailedInsufficientStorageException(
                     ecpMsg
                 )
-                INSTALL_FAILED_INVALID_APK -> com.rosan.installer.data.app.model.exception.InstallFailedInvalidAPKException(
+
+                INSTALL_FAILED_DUPLICATE_PACKAGE -> InstallFailedDuplicatePackageException(ecpMsg)
+                INSTALL_FAILED_NO_SHARED_USER -> InstallFailedNoSharedUserException(ecpMsg)
+                INSTALL_FAILED_UPDATE_INCOMPATIBLE -> InstallFailedUpdateIncompatibleException(
                     ecpMsg
                 )
-                INSTALL_FAILED_INVALID_URI -> com.rosan.installer.data.app.model.exception.InstallFailedInvalidURIException(
+
+                INSTALL_FAILED_SHARED_USER_INCOMPATIBLE -> InstallFailedSharedUserIncompatibleException(
                     ecpMsg
                 )
-                INSTALL_FAILED_INSUFFICIENT_STORAGE -> com.rosan.installer.data.app.model.exception.InstallFailedInsufficientStorageException(
+
+                INSTALL_FAILED_MISSING_SHARED_LIBRARY -> InstallFailedMissingSharedLibraryException(
                     ecpMsg
                 )
-                INSTALL_FAILED_DUPLICATE_PACKAGE -> com.rosan.installer.data.app.model.exception.InstallFailedDuplicatePackageException(
+
+                INSTALL_FAILED_REPLACE_COULDNT_DELETE -> InstallFailedReplaceCouldntDeleteException(
                     ecpMsg
                 )
-                INSTALL_FAILED_NO_SHARED_USER -> com.rosan.installer.data.app.model.exception.InstallFailedNoSharedUserException(
+
+                INSTALL_FAILED_DEXOPT -> InstallFailedDexoptException(ecpMsg)
+                INSTALL_FAILED_OLDER_SDK -> InstallFailedOlderSdkException(ecpMsg)
+                INSTALL_FAILED_CONFLICTING_PROVIDER -> InstallFailedConflictingProviderException(
                     ecpMsg
                 )
-                INSTALL_FAILED_UPDATE_INCOMPATIBLE -> com.rosan.installer.data.app.model.exception.InstallFailedUpdateIncompatibleException(
+
+                INSTALL_FAILED_NEWER_SDK -> InstallFailedNewerSDKException(ecpMsg)
+                INSTALL_FAILED_TEST_ONLY -> InstallFailedTestOnlyException(ecpMsg)
+                INSTALL_FAILED_CPU_ABI_INCOMPATIBLE -> InstallFailedCpuAbiIncompatibleException(
                     ecpMsg
                 )
-                INSTALL_FAILED_SHARED_USER_INCOMPATIBLE -> com.rosan.installer.data.app.model.exception.InstallFailedSharedUserIncompatibleException(
+
+                INSTALL_FAILED_MISSING_FEATURE -> InstallFailedMissingFeatureException(ecpMsg)
+                INSTALL_FAILED_CONTAINER_ERROR -> InstallFailedContainerErrorException(ecpMsg)
+                INSTALL_FAILED_INVALID_INSTALL_LOCATION -> InstallFailedInvalidInstallLocationException(
                     ecpMsg
                 )
-                INSTALL_FAILED_MISSING_SHARED_LIBRARY -> com.rosan.installer.data.app.model.exception.InstallFailedMissingSharedLibraryException(
+
+                INSTALL_FAILED_MEDIA_UNAVAILABLE -> InstallFailedMediaUnavailableException(ecpMsg)
+                INSTALL_FAILED_VERIFICATION_TIMEOUT -> InstallFailedVerificationTimeoutException(
                     ecpMsg
                 )
-                INSTALL_FAILED_REPLACE_COULDNT_DELETE -> com.rosan.installer.data.app.model.exception.InstallFailedReplaceCouldntDeleteException(
+
+                INSTALL_FAILED_VERIFICATION_FAILURE -> InstallFailedVerificationFailureException(
                     ecpMsg
                 )
-                INSTALL_FAILED_DEXOPT -> com.rosan.installer.data.app.model.exception.InstallFailedDexoptException(
-                    ecpMsg
-                )
-                INSTALL_FAILED_OLDER_SDK -> com.rosan.installer.data.app.model.exception.InstallFailedOlderSdkException(
-                    ecpMsg
-                )
-                INSTALL_FAILED_CONFLICTING_PROVIDER -> com.rosan.installer.data.app.model.exception.InstallFailedConflictingProviderException(
-                    ecpMsg
-                )
-                INSTALL_FAILED_NEWER_SDK -> com.rosan.installer.data.app.model.exception.InstallFailedNewerSDKException(
-                    ecpMsg
-                )
-                INSTALL_FAILED_TEST_ONLY -> com.rosan.installer.data.app.model.exception.InstallFailedTestOnlyException(
-                    ecpMsg
-                )
-                INSTALL_FAILED_CPU_ABI_INCOMPATIBLE -> com.rosan.installer.data.app.model.exception.InstallFailedCpuAbiIncompatibleException(
-                    ecpMsg
-                )
-                INSTALL_FAILED_MISSING_FEATURE -> com.rosan.installer.data.app.model.exception.InstallFailedMissingFeatureException(
-                    ecpMsg
-                )
-                INSTALL_FAILED_CONTAINER_ERROR -> com.rosan.installer.data.app.model.exception.InstallFailedContainerErrorException(
-                    ecpMsg
-                )
-                INSTALL_FAILED_INVALID_INSTALL_LOCATION -> com.rosan.installer.data.app.model.exception.InstallFailedInvalidInstallLocationException(
-                    ecpMsg
-                )
-                INSTALL_FAILED_MEDIA_UNAVAILABLE -> com.rosan.installer.data.app.model.exception.InstallFailedMediaUnavailableException(
-                    ecpMsg
-                )
-                INSTALL_FAILED_VERIFICATION_TIMEOUT -> com.rosan.installer.data.app.model.exception.InstallFailedVerificationTimeoutException(
-                    ecpMsg
-                )
-                INSTALL_FAILED_VERIFICATION_FAILURE -> com.rosan.installer.data.app.model.exception.InstallFailedVerificationFailureException(
-                    ecpMsg
-                )
-                INSTALL_FAILED_PACKAGE_CHANGED -> com.rosan.installer.data.app.model.exception.InstallFailedPackageChangedException(
-                    ecpMsg
-                )
-                INSTALL_FAILED_UID_CHANGED -> com.rosan.installer.data.app.model.exception.InstallFailedUidChangedException(
-                    ecpMsg
-                )
-                INSTALL_FAILED_VERSION_DOWNGRADE -> com.rosan.installer.data.app.model.exception.InstallFailedVersionDowngradeException(
-                    ecpMsg
-                )
+
+                INSTALL_FAILED_PACKAGE_CHANGED -> InstallFailedPackageChangedException(ecpMsg)
+                INSTALL_FAILED_UID_CHANGED -> InstallFailedUidChangedException(ecpMsg)
+                INSTALL_FAILED_VERSION_DOWNGRADE -> InstallFailedVersionDowngradeException(ecpMsg)
                 else -> IllegalStateException(ecpMsg)
             }
         }

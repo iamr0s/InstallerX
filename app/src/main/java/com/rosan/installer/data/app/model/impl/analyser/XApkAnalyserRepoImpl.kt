@@ -1,6 +1,7 @@
 package com.rosan.installer.data.app.model.impl.analyser
 
 import android.graphics.drawable.Drawable
+import com.rosan.installer.data.app.model.entity.AnalyseExtraEntity
 import com.rosan.installer.data.app.model.entity.AppEntity
 import com.rosan.installer.data.app.model.entity.DataEntity
 import com.rosan.installer.data.app.repo.AnalyserRepo
@@ -16,10 +17,14 @@ import java.io.File
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 
-class XApkAnalyserRepoImpl : AnalyserRepo, KoinComponent {
+object XApkAnalyserRepoImpl : AnalyserRepo, KoinComponent {
     private val json = get<Json>()
 
-    override suspend fun doWork(config: ConfigEntity, data: List<DataEntity>): List<AppEntity> {
+    override suspend fun doWork(
+        config: ConfigEntity,
+        data: List<DataEntity>,
+        extra: AnalyseExtraEntity
+    ): List<AppEntity> {
         val apps = mutableListOf<AppEntity>()
         data.forEach { apps.addAll(doWork(config, it)) }
         return apps
@@ -44,12 +49,14 @@ class XApkAnalyserRepoImpl : AnalyserRepo, KoinComponent {
                 Drawable.createFromStream(zip.getInputStream(it), it.name)
             }
             manifest.splits.forEach {
-                doSingleWork(
-                    config,
-                    manifest,
-                    icon,
-                    it,
-                    DataEntity.ZipFileEntity(data.path, it.name)
+                apps.addAll(
+                    doSingleWork(
+                        config,
+                        manifest,
+                        icon,
+                        it,
+                        DataEntity.ZipFileEntity(it.name, data)
+                    )
                 )
             }
         }
@@ -85,6 +92,7 @@ class XApkAnalyserRepoImpl : AnalyserRepo, KoinComponent {
                 when (entry.name) {
                     "manifest.json" -> manifestOrNull =
                         json.decodeFromStream(inputStream)
+
                     "icon.png" -> icon =
                         Drawable.createFromStream(inputStream, entry.name)
                 }
@@ -93,12 +101,14 @@ class XApkAnalyserRepoImpl : AnalyserRepo, KoinComponent {
         if (manifestOrNull == null) return apps
         val manifest = manifestOrNull!!
         manifest.splits.forEach {
-            doSingleWork(
-                config,
-                manifest,
-                icon,
-                it,
-                DataEntity.ZipInputStreamEntity(it.name, data)
+            apps.addAll(
+                doSingleWork(
+                    config,
+                    manifest,
+                    icon,
+                    it,
+                    DataEntity.ZipInputStreamEntity(it.name, data)
+                )
             )
         }
         return apps
@@ -118,6 +128,7 @@ class XApkAnalyserRepoImpl : AnalyserRepo, KoinComponent {
                 splitName = if (split.splitName == "base") null
                 else split.splitName
             }
+
             "dm" -> dmName = File(split.name).nameWithoutExtension
             else -> return listOf()
         }

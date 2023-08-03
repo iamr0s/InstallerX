@@ -9,6 +9,7 @@ import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
 import com.rosan.installer.data.settings.model.room.entity.converter.AuthorizerConverter
+import com.rosan.installer.data.settings.model.room.entity.converter.InstallModeConverter
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -27,6 +28,8 @@ class PreferredViewModel : ViewModel(), KoinComponent {
             is PreferredViewAction.ChangeGlobalCustomizeAuthorizer -> changeGlobalCustomizeAuthorizer(
                 action.customizeAuthorizer
             )
+
+            is PreferredViewAction.ChangeGlobalInstallMode -> changeGlobalInstallMode(action.installMode)
         }
     }
 
@@ -43,8 +46,12 @@ class PreferredViewModel : ViewModel(), KoinComponent {
                     (if (authorizer == ConfigEntity.Authorizer.Customize) sharedPreferences.getString(
                         "customize_authorizer", null
                     ) else null) ?: ""
+                val installMode =
+                    InstallModeConverter.revert(sharedPreferences.getString("install_mode", null))
                 state = state.copy(
-                    authorizer = authorizer, customizeAuthorizer = customizeAuthorizer
+                    authorizer = authorizer,
+                    customizeAuthorizer = customizeAuthorizer,
+                    installMode = installMode
                 )
             }
             listener.onSharedPreferenceChanged(appSharedPreferences, null)
@@ -64,6 +71,12 @@ class PreferredViewModel : ViewModel(), KoinComponent {
         appSharedPreferences.edit(true) {
             if (state.authorizerCustomize) putString(key, customizeAuthorizer)
             else remove(key)
+        }
+    }
+
+    private fun changeGlobalInstallMode(installMode: ConfigEntity.InstallMode) {
+        appSharedPreferences.edit(true) {
+            putString("install_mode", InstallModeConverter.convert(installMode))
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.rosan.installer.data.app.model.impl.analyser
 
 import android.graphics.drawable.Drawable
+import com.rosan.installer.data.app.model.entity.AnalyseExtraEntity
 import com.rosan.installer.data.app.model.entity.AppEntity
 import com.rosan.installer.data.app.model.entity.DataEntity
 import com.rosan.installer.data.app.repo.AnalyserRepo
@@ -16,10 +17,14 @@ import java.io.File
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 
-class ApkMAnalyserRepoImpl : AnalyserRepo, KoinComponent {
+object ApkMAnalyserRepoImpl : AnalyserRepo, KoinComponent {
     private val json = get<Json>()
 
-    override suspend fun doWork(config: ConfigEntity, data: List<DataEntity>): List<AppEntity> {
+    override suspend fun doWork(
+        config: ConfigEntity,
+        data: List<DataEntity>,
+        extra: AnalyseExtraEntity
+    ): List<AppEntity> {
         val apps = mutableListOf<AppEntity>()
         data.forEach { apps.addAll(doWork(config, it)) }
         return apps
@@ -51,7 +56,7 @@ class ApkMAnalyserRepoImpl : AnalyserRepo, KoinComponent {
                         manifest,
                         icon,
                         it.name,
-                        DataEntity.ZipFileEntity(data.path, it.name)
+                        DataEntity.ZipFileEntity(it.name, DataEntity.FileEntity(data.path))
                     )
                 )
             }
@@ -93,6 +98,7 @@ class ApkMAnalyserRepoImpl : AnalyserRepo, KoinComponent {
                     file.extension == "dm" -> names.add(entry.name)
                     entry.name == "info.json" -> manifestOrNull =
                         json.decodeFromStream(inputStream)
+
                     entry.name == "icon.png" -> icon =
                         Drawable.createFromStream(inputStream, entry.name)
                 }
@@ -130,6 +136,7 @@ class ApkMAnalyserRepoImpl : AnalyserRepo, KoinComponent {
                 splitName = if (name == "base") null
                 else name
             }
+
             "dm" -> dmName = File(name).nameWithoutExtension
             else -> return listOf()
         }
