@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,6 +33,7 @@ import com.rosan.installer.R
 import com.rosan.installer.ui.page.settings.config.all.AllPage
 import com.rosan.installer.ui.page.settings.home.HomePage
 import com.rosan.installer.ui.page.settings.preferred.PreferredPage
+import com.rosan.installer.ui.theme.exclude
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -77,10 +77,16 @@ fun MainPage(navController: NavController) {
     ) {
         val isLandscapeScreen = maxHeight / maxWidth > 1.4
 
-        val navigationWindowInsets = WindowInsets.safeDrawing.only(
+        val navigationSide =
             if (isLandscapeScreen) WindowInsetsSides.Bottom
             else WindowInsetsSides.Left
+
+        val navigationWindowInsets = WindowInsets.safeDrawing.only(
+            (if (isLandscapeScreen) WindowInsetsSides.Horizontal
+            else WindowInsetsSides.Vertical) + navigationSide
         )
+        val pageWindowInsets = WindowInsets.safeDrawing.exclude(navigationSide)
+
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -107,7 +113,7 @@ fun MainPage(navController: NavController) {
                         .weight(1f)
                         .fillMaxSize()
                 ) {
-                    data[it].content.invoke(WindowInsets.safeDrawing.exclude(navigationWindowInsets))
+                    data[it].content.invoke(pageWindowInsets)
                 }
                 if (isLandscapeScreen) {
                     RowNavigation(

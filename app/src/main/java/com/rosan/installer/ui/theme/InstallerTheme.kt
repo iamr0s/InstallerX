@@ -60,12 +60,10 @@ fun InstallerTheme(
         window.statusBarColor = Color.Transparent.toArgb()
         WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars =
             !darkTheme
-        window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
 
         window.navigationBarColor = Color.Transparent.toArgb()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
             window.navigationBarDividerColor = Color.Transparent.toArgb()
-        window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
 
         WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars =
             !darkTheme
